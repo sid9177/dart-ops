@@ -2,22 +2,91 @@ import sys
 import io
 import os
 import traceback
+import html
+import subprocess
 
 def execute_python_code(code: str) -> str:
-    old_stdout = sys.stdout
-    old_stderr = sys.stderr
-    buffer = io.StringIO()
-    sys.stdout = sys.stderr = buffer
-    exec_globals = {}
+    wrapper = (
+        "import sys\n"
+        "import traceback\n"
+        "exec_globals = {}\n"
+        "try:\n"
+        f"    exec({repr(code)}, exec_globals)\n"
+        "except BaseException:\n"
+        "    sys.stderr.write('Execution Error:\\n' + traceback.format_exc())\n"
+        "    sys.exit(1)\n"
+    )
     try:
-        try:
-            exec(code, exec_globals)
-            return buffer.getvalue()
-        except BaseException:
-            return f"Execution Error:\n{traceback.format_exc()}"
-    finally:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
+        res = subprocess.run(
+            [sys.executable, "-c", wrapper],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        return res.stdout + res.stderr
+    except subprocess.TimeoutExpired:
+        return "Execution Error: Code execution timed out (exceeded 10 seconds)."
+    except Exception as e:
+        return f"Execution Error: {str(e)}"
+
+def parse_markdown(markdown_content: str):
+    elements = []
+    current_paragraph = []
+
+    def flush_paragraph():
+        if current_paragraph:
+            elements.append({
+                "type": "paragraph",
+                "text": " ".join(current_paragraph)
+            })
+            current_paragraph.clear()
+
+    lines = markdown_content.split("\n")
+    for line in lines:
+        stripped_line = line.strip()
+        
+        # Empty line separates blocks
+        if not stripped_line:
+            flush_paragraph()
+            continue
+            
+        # Headers
+        if stripped_line.startswith("# ") or stripped_line.startswith("## ") or stripped_line.startswith("### "):
+            flush_paragraph()
+            if stripped_line.startswith("# "):
+                level = 1
+                text = stripped_line[2:]
+            elif stripped_line.startswith("## "):
+                level = 2
+                text = stripped_line[3:]
+            else:
+                level = 3
+                text = stripped_line[4:]
+            elements.append({
+                "type": "header",
+                "level": level,
+                "text": text
+            })
+            continue
+
+        # Bullet points: e.g. "  * subbullet" or "* bullet"
+        leading_spaces = len(line) - len(line.lstrip(' '))
+        if stripped_line.startswith("* ") or stripped_line.startswith("- "):
+            flush_paragraph()
+            level = leading_spaces // 2
+            text = stripped_line[2:]
+            elements.append({
+                "type": "bullet",
+                "level": level,
+                "text": text
+            })
+            continue
+
+        # Normal text line - part of paragraph
+        current_paragraph.append(stripped_line)
+
+    flush_paragraph()
+    return elements
 
 def export_report_to_pdf(markdown_content: str, output_path: str):
     try:
@@ -70,6 +139,21 @@ def export_report_to_pdf(markdown_content: str, output_path: str):
         leading=14
     )
 
+    # Dynamic style helper for nested bullets
+    def get_bullet_style(level):
+        style_name = f'CitiBulletL{level}'
+        if style_name in styles:
+            return styles[style_name]
+        indent = 15 + level * 15
+        new_style = ParagraphStyle(
+            style_name,
+            parent=body_style,
+            leftIndent=indent,
+            firstLineIndent=-10
+        )
+        styles.add(new_style)
+        return new_style
+
     story = []
     
     header_bar = Table([[""]], colWidths=[540])
@@ -81,21 +165,23 @@ def export_report_to_pdf(markdown_content: str, output_path: str):
     story.append(header_bar)
     story.append(Spacer(1, 15))
 
-    lines = markdown_content.split("\n")
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        if line.startswith("# "):
-            story.append(Paragraph(line[2:], title_style))
-        elif line.startswith("## "):
-            story.append(Paragraph(line[3:], h2_style))
-        elif line.startswith("### "):
-            story.append(Paragraph(line[4:], h3_style))
-        elif line.startswith("* ") or line.startswith("- "):
-            story.append(Paragraph(f"• {line[2:]}", body_style))
-        else:
-            story.append(Paragraph(line, body_style))
+    elements = parse_markdown(markdown_content)
+    for elem in elements:
+        if elem["type"] == "header":
+            escaped = html.escape(elem["text"])
+            if elem["level"] == 1:
+                story.append(Paragraph(escaped, title_style))
+            elif elem["level"] == 2:
+                story.append(Paragraph(escaped, h2_style))
+            else:
+                story.append(Paragraph(escaped, h3_style))
+        elif elem["type"] == "bullet":
+            escaped = html.escape(elem["text"])
+            b_style = get_bullet_style(elem["level"])
+            story.append(Paragraph(f"• {escaped}", b_style))
+        elif elem["type"] == "paragraph":
+            escaped = html.escape(elem["text"])
+            story.append(Paragraph(escaped, body_style))
 
     confidential_style = ParagraphStyle('CitiConf', parent=body_style, fontSize=8, textColor=colors.gray, alignment=1)
     story.append(Spacer(1, 25))
@@ -121,27 +207,25 @@ def export_report_to_pptx(markdown_content: str, output_path: str):
     citi_red_rgb = RGBColor(238, 49, 36)
     charcoal_rgb = RGBColor(34, 34, 34)
 
-    # Parse markdown into sections
+    # Parse markdown into elements
+    elements = parse_markdown(markdown_content)
+
+    # Parse elements into sections
     sections = []
     current_title = None
     current_content = []
     
-    lines = markdown_content.split("\n")
-    for line in lines:
-        line_str = line.strip()
-        if not line_str:
-            continue
-        
-        if line_str.startswith("# ") or line_str.startswith("## ") or line_str.startswith("### "):
+    for elem in elements:
+        if elem["type"] == "header":
             if current_title is not None or current_content:
                 sections.append({
                     "title": current_title or "Report Details",
                     "content": current_content
                 })
-            current_title = line_str.lstrip("#").strip()
+            current_title = elem["text"]
             current_content = []
         else:
-            current_content.append(line_str)
+            current_content.append(elem)
             
     if current_title is not None or current_content:
         sections.append({
@@ -203,19 +287,19 @@ def export_report_to_pptx(markdown_content: str, output_path: str):
             tf.word_wrap = True
             
             first_para = True
-            for item in chunk:
+            for elem in chunk:
                 if first_para:
                     p = tf.paragraphs[0]
                     first_para = False
                 else:
                     p = tf.add_paragraph()
                 
-                if item.startswith("* ") or item.startswith("- "):
-                    p.text = item[2:]
-                    p.level = 0
-                else:
-                    p.text = item
-                    p.level = 0
+                p.text = elem["text"]
                 p.font.color.rgb = charcoal_rgb
+                
+                if elem["type"] == "bullet":
+                    p.level = elem["level"]
+                else:
+                    p.level = 0
 
     prs.save(output_path)

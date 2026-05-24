@@ -37,3 +37,12 @@ def test_duckdb_helper_invalid_file():
     helper = DuckDBHelper()
     with pytest.raises(IOError):
         helper.load_csv("invalid_table", "non_existent_file.csv")
+
+def test_duckdb_helper_invalid_table_name():
+    helper = DuckDBHelper()
+    with pytest.raises(ValueError, match="Invalid table name"):
+        helper.load_csv("table name with spaces", "dummy.csv")
+    with pytest.raises(ValueError, match="Invalid table name"):
+        helper.load_csv("123table", "dummy.csv")
+    with pytest.raises(ValueError, match="Invalid table name"):
+        helper.load_csv("table;DROP TABLE test;", "dummy.csv")

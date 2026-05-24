@@ -6,6 +6,10 @@ class DuckDBHelper:
         self.conn = duckdb.connect(database=":memory:")
 
     def load_csv(self, table_name: str, file_path: str):
+        import re
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+            raise ValueError(f"Invalid table name: '{table_name}'")
+
         # Normalize the file path to use forward slashes so DuckDB can read it correctly on Windows
         normalized_path = file_path.replace("\\", "/")
         try:
@@ -13,7 +17,7 @@ class DuckDBHelper:
                 df = pd.read_excel(file_path)
                 self.conn.register(table_name, df)
             else:
-                self.conn.execute(f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{normalized_path}\')')
+                self.conn.execute(f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(?)', (normalized_path,))
         except Exception as e:
             raise IOError(f"Failed to load file '{file_path}': {str(e)}") from e
 
