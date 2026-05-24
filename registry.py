@@ -24,54 +24,50 @@ class AgentRegistry:
 
         return [get_schema, run_sql]
 
-    def load_chapter_agents(self, config_dir: str):
+    def _read_agent_configs(self, config_dir: str) -> list[dict]:
+        configs = []
         if not os.path.exists(config_dir):
-            return
+            return configs
 
         for filename in os.listdir(config_dir):
             if filename.endswith(".yaml") or filename.endswith(".yml"):
                 filepath = os.path.join(config_dir, filename)
                 with open(filepath, "r") as f:
-                    config = yaml.safe_load(f)
+                    configs.append(yaml.safe_load(f))
+        return configs
 
-                # 1. Load data into DuckDB if specified
-                table_name = config.get("database_table")
-                file_path = config.get("file_path")
-                if table_name and file_path and os.path.exists(file_path):
-                    try:
-                        self.db_helper.load_csv(table_name, file_path)
-                    except Exception as e:
-                        logging.warning(f"Failed to load data for {config['name']}: {e}")
+    def load_chapter_agents(self, config_dir: str):
+        for config in self._read_agent_configs(config_dir):
+            # 1. Load data into DuckDB if specified
+            table_name = config.get("database_table")
+            file_path = config.get("file_path")
+            if table_name and file_path and os.path.exists(file_path):
+                try:
+                    self.db_helper.load_csv(table_name, file_path)
+                except Exception as e:
+                    logging.warning(f"Failed to load data for {config['name']}: {e}")
 
-                # 2. Create tools bounded to this table
-                tools = []
-                if table_name:
-                    tools = self._create_agent_tools(table_name)
+            # 2. Create tools bounded to this table
+            tools = []
+            if table_name:
+                tools = self._create_agent_tools(table_name)
 
-                # 3. Instantiate ADK Agent
-                agent = Agent(
-                    name=config["name"],
-                    model=config.get("model", "gemini-2.5-flash"),
-                    instruction=config.get("instruction", ""),
-                    tools=tools
-                )
-                self.agents[config["name"]] = agent
+            # 3. Instantiate ADK Agent
+            agent = Agent(
+                name=config["name"],
+                model=config.get("model", "gemini-2.5-flash"),
+                instruction=config.get("instruction", ""),
+                tools=tools
+            )
+            self.agents[config["name"]] = agent
 
     def load_reviewer_agents(self, config_dir: str):
-        if not os.path.exists(config_dir):
-            return
-
-        for filename in os.listdir(config_dir):
-            if filename.endswith(".yaml") or filename.endswith(".yml"):
-                filepath = os.path.join(config_dir, filename)
-                with open(filepath, "r") as f:
-                    config = yaml.safe_load(f)
-
-                agent = Agent(
-                    name=config["name"],
-                    model=config.get("model", "gemini-2.5-flash"),
-                    instruction=config.get("instruction", ""),
-                    tools=[]
-                )
-                self.reviewers[config["name"]] = agent
-                self.reviewer_names.append(config["name"])
+        for config in self._read_agent_configs(config_dir):
+            agent = Agent(
+                name=config["name"],
+                model=config.get("model", "gemini-2.5-flash"),
+                instruction=config.get("instruction", ""),
+                tools=[]
+            )
+            self.reviewers[config["name"]] = agent
+            self.reviewer_names.append(config["name"])
