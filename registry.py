@@ -1,84 +1,55 @@
 import os
 import yaml
-import re
-from google.adk.agents.llm_agent import Agent
+from google.adk.agents import Agent
 from db_helper import DuckDBHelper
 
 class AgentRegistry:
-    def __init__(self, config_dir: str = "config"):
-        self.config_dir = config_dir
-        self.agents = {}
-        self.reviewer_names = []
-        self.db = DuckDBHelper()
+    def __init__(self, db_helper: DuckDBHelper):
+        self.db_helper = db_helper
+        self.agents: dict[str, Agent] = {}
 
-    def load_configs(self):
-        # Load chapter agents
-        agents_path = os.path.join(self.config_dir, "agents")
-        if os.path.exists(agents_path):
-            for f in os.listdir(agents_path):
-                if f.endswith(".yaml") or f.endswith(".yml"):
-                    with open(os.path.join(agents_path, f), "r", encoding="utf-8") as stream:
-                        config = yaml.safe_load(stream)
-                        self._register_agent(config, is_reviewer=False)
-                        
-        # Load reviewer agents
-        reviewers_path = os.path.join(self.config_dir, "reviewers")
-        if os.path.exists(reviewers_path):
-            for f in os.listdir(reviewers_path):
-                if f.endswith(".yaml") or f.endswith(".yml"):
-                    with open(os.path.join(reviewers_path, f), "r", encoding="utf-8") as stream:
-                        config = yaml.safe_load(stream)
-                        self._register_agent(config, is_reviewer=True)
+    def load_chapter_agents(self, config_dir: str):
+        if not os.path.exists(config_dir):
+            return
 
-    def _register_agent(self, config: dict, is_reviewer: bool):
-        name = config.get("name")
-        model = config.get("model", "gemini-2.5-flash")
-        instruction = config.get("instruction", "")
-        description = config.get("description", "")
-        
-        file_path = config.get("file_path")
-        table_name = config.get("database_table")
-        
-        agent_tools = []
-        if not is_reviewer and file_path and table_name:
-            # Load file into DuckDB
-            # Resolve relative file path relative to project root
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            full_path = os.path.join(base_dir, file_path) if not os.path.isabs(file_path) else file_path
-            
-            # Ensure path exists, if not log warning and skip
-            if os.path.exists(full_path):
-                self.db.load_csv(table_name, full_path)
-                
-                # Define schema discovery and query tools
-                def get_schema(table=table_name):
-                    return self.db.get_table_schema(table)
-                
-                def run_query(sql: str):
-                    return self.db.run_sql_query(sql)
+        for filename in os.listdir(config_dir):
+            if filename.endswith(".yaml") or filename.endswith(".yml"):
+                filepath = os.path.join(config_dir, filename)
+                with open(filepath, "r") as f:
+                    config = yaml.safe_load(f)
+
+                # 1. Load data into DuckDB if specified
+                table_name = config.get("database_table")
+                file_path = config.get("file_path")
+                if table_name and file_path and os.path.exists(file_path):
+                    try:
+                        self.db_helper.load_csv(table_name, file_path)
+                    except Exception as e:
+                        print(f"Warning: Failed to load data for {config['name']}: {e}")
+
+                # 2. Create tools bounded to this table
+                tools = []
+                if table_name:
+                    def get_schema() -> str:
+                        """Get the schema of the assigned database table."""
+                        return self.db_helper.get_table_schema(table_name)
+                    get_schema.__name__ = f"get_{table_name}_schema"
                     
-                get_schema.__name__ = f"get_{table_name}_schema"
-                get_schema.__doc__ = f"Get column names and schema for table '{table_name}'."
-                run_query.__name__ = f"query_{table_name}"
-                run_query.__doc__ = f"Run read-only SQL queries on table '{table_name}'."
-                
-                agent_tools = [get_schema, run_query]
+                    def run_sql(sql_query: str) -> str:
+                        """Run a SQL query against the database."""
+                        return self.db_helper.run_sql_query(sql_query)
+                    run_sql.__name__ = f"query_{table_name}_table"
 
-        agent = Agent(
-            name=name,
-            model=model,
-            instruction=instruction,
-            description=description,
-            tools=agent_tools
-        )
-        self.agents[name] = agent
-        if is_reviewer and name not in self.reviewer_names:
-            self.reviewer_names.append(name)
+                    tools = [
+                        get_schema,
+                        run_sql
+                    ]
 
-    def get_all_tools(self) -> list:
-        from google.adk.tools import AgentTool
-        # Wrap each agent as an ADK tool
-        tools = []
-        for name, agent in self.agents.items():
-            tools.append(AgentTool(agent))
-        return tools
+                # 3. Instantiate ADK Agent
+                agent = Agent(
+                    name=config["name"],
+                    model=config.get("model", "gemini-2.5-flash"),
+                    instruction=config.get("instruction", ""),
+                    tools=tools
+                )
+                self.agents[config["name"]] = agent
