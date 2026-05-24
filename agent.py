@@ -1,13 +1,17 @@
 import os
+import uuid
 from typing import Any, AsyncGenerator
 
 from google.adk.agents import BaseAgent
 from google.adk.agents.invocation_context import InvocationContext
 from google.adk.events import Event, EventActions
+from google.adk.runners import Runner
+from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-from registry import AgentRegistry
 from db_helper import DuckDBHelper
+from registry import AgentRegistry
+from tools import export_report_to_pdf, export_report_to_pptx
 
 class OperationalRiskCoordinator(BaseAgent):
     """The root agent orchestrating Operational Risk chapters."""
@@ -24,9 +28,6 @@ class OperationalRiskCoordinator(BaseAgent):
         self.registry.load_chapter_agents(config_path)
 
     async def _run_subagent(self, agent, ctx, prompt, output_list=None):
-        from google.adk.runners import Runner
-        from google.adk.sessions import InMemorySessionService
-        import uuid
         
         session_service = InMemorySessionService()
         runner = Runner(agent=agent, app_name=ctx.app_name, session_service=session_service, auto_create_session=True)
@@ -122,7 +123,8 @@ class OperationalRiskCoordinator(BaseAgent):
                 reviewer_agent = self.registry.agents.get(r_name)
                 
                 if state.get("waiting_for_user_challenge"):
-                    prompt = f"The user responded to your challenge: {user_input}\nHere is the current draft:\n{draft}\nDo you still [CHALLENGE] or do you [APPROVE]?"
+                    last_challenge_text = state.get("reviewer_comments", [])[-1] if state.get("reviewer_comments") else ""
+                    prompt = f"You previously challenged this report with: {last_challenge_text}\nThe user responded: {user_input}\nHere is the draft:\n{draft}\nDo you still [CHALLENGE] or do you [APPROVE]?"
                     state["waiting_for_user_challenge"] = False
                 else:
                     prompt = f"Please review this draft. If you see issues, output [CHALLENGE] and explain. Otherwise output [APPROVE].\nDraft:\n{draft}"
@@ -138,9 +140,18 @@ class OperationalRiskCoordinator(BaseAgent):
                     comments.append(f"{r_name}: {response_text}")
                     state["reviewer_comments"] = comments
                     return 
-                else:
+                elif "[APPROVE]" in response_text.upper():
                     current_reviewer_idx += 1
                     state["current_reviewer_idx"] = current_reviewer_idx
+                else:
+                    yield Event(
+                        author=self.name,
+                        content=types.Content(
+                            role="model",
+                            parts=[types.Part.from_text(text=f"Reviewer {r_name} did not provide a valid response. Got: {response_text}. Please type 'RETRY' to try again.")]
+                        )
+                    )
+                    return
                     
             state["stage"] = "gate_3_signoff"
             user_input = ""
@@ -162,23 +173,28 @@ class OperationalRiskCoordinator(BaseAgent):
                 return
 
         if state["stage"] == "export":
-            from tools import export_report_to_pdf, export_report_to_pptx
-            import os
-            
-            os.makedirs("reports", exist_ok=True)
-            draft = state.get("draft", "")
-            export_report_to_pdf(draft, "reports/risk_report.pdf")
-            export_report_to_pptx(draft, "reports/risk_report.pptx")
-            
-            yield Event(
-                author=self.name,
-                content=types.Content(
-                    role="model",
-                    parts=[types.Part.from_text(text="Export complete! Saved to reports/risk_report.pdf and reports/risk_report.pptx.")]
+            try:
+                os.makedirs("reports", exist_ok=True)
+                draft = state.get("draft", "")
+                export_report_to_pdf(draft, "reports/risk_report.pdf")
+                export_report_to_pptx(draft, "reports/risk_report.pptx")
+                
+                yield Event(
+                    author=self.name,
+                    content=types.Content(
+                        role="model",
+                        parts=[types.Part.from_text(text="Export complete! Saved to reports/risk_report.pdf and reports/risk_report.pptx.")]
+                    )
                 )
-            )
+            except Exception as e:
+                yield Event(
+                    author=self.name,
+                    content=types.Content(
+                        role="model",
+                        parts=[types.Part.from_text(text=f"Failed to export report: {str(e)}")]
+                    )
+                )
             state["stage"] = "done"
-            return
             
         if state["stage"] == "done":
             yield Event(
