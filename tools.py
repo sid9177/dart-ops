@@ -6,17 +6,18 @@ import traceback
 def execute_python_code(code: str) -> str:
     old_stdout = sys.stdout
     old_stderr = sys.stderr
-    sys.stdout = sys.stderr = buffer = io.StringIO()
+    buffer = io.StringIO()
+    sys.stdout = sys.stderr = buffer
     exec_globals = {}
     try:
-        exec(code, exec_globals)
+        try:
+            exec(code, exec_globals)
+            return buffer.getvalue()
+        except BaseException:
+            return f"Execution Error:\n{traceback.format_exc()}"
+    finally:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
-        return buffer.getvalue()
-    except Exception as e:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
-        return f"Execution Error:\n{traceback.format_exc()}"
 
 def export_report_to_pdf(markdown_content: str, output_path: str):
     try:
@@ -43,6 +44,20 @@ def export_report_to_pdf(markdown_content: str, output_path: str):
         fontSize=22,
         textColor=citi_blue,
         spaceAfter=15
+    )
+    
+    h2_style = ParagraphStyle(
+        'CitiH2',
+        parent=title_style,
+        fontSize=16,
+        spaceBefore=10
+    )
+    
+    h3_style = ParagraphStyle(
+        'CitiH3',
+        parent=title_style,
+        fontSize=12,
+        spaceBefore=8
     )
     
     body_style = ParagraphStyle(
@@ -74,10 +89,8 @@ def export_report_to_pdf(markdown_content: str, output_path: str):
         if line.startswith("# "):
             story.append(Paragraph(line[2:], title_style))
         elif line.startswith("## "):
-            h2_style = ParagraphStyle('CitiH2', parent=title_style, fontSize=16, spaceBefore=10)
             story.append(Paragraph(line[3:], h2_style))
         elif line.startswith("### "):
-            h3_style = ParagraphStyle('CitiH3', parent=title_style, fontSize=12, spaceBefore=8)
             story.append(Paragraph(line[4:], h3_style))
         elif line.startswith("* ") or line.startswith("- "):
             story.append(Paragraph(f"• {line[2:]}", body_style))
@@ -108,7 +121,37 @@ def export_report_to_pptx(markdown_content: str, output_path: str):
     citi_red_rgb = RGBColor(238, 49, 36)
     charcoal_rgb = RGBColor(34, 34, 34)
 
-    # Title Slide
+    # Parse markdown into sections
+    sections = []
+    current_title = None
+    current_content = []
+    
+    lines = markdown_content.split("\n")
+    for line in lines:
+        line_str = line.strip()
+        if not line_str:
+            continue
+        
+        if line_str.startswith("# ") or line_str.startswith("## ") or line_str.startswith("### "):
+            if current_title is not None or current_content:
+                sections.append({
+                    "title": current_title or "Report Details",
+                    "content": current_content
+                })
+            current_title = line_str.lstrip("#").strip()
+            current_content = []
+        else:
+            current_content.append(line_str)
+            
+    if current_title is not None or current_content:
+        sections.append({
+            "title": current_title or "Report Details",
+            "content": current_content
+        })
+
+    # Create Title Slide
+    first_section_title = sections[0]["title"] if sections else "Citi Operational Risk Analytics Report"
+    
     slide_layout = prs.slide_layouts[5] 
     slide = prs.slides.add_slide(slide_layout)
     
@@ -117,44 +160,62 @@ def export_report_to_pptx(markdown_content: str, output_path: str):
     tf = header_box.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
-    p.text = "Citi Operational Risk Analytics Report"
+    p.text = first_section_title
     p.font.size = Pt(36)
     p.font.bold = True
     p.font.color.rgb = citi_blue_rgb
 
     # Accent Red line
-    line = shapes.add_shape(1, Inches(0.5), Inches(2.0), Inches(12.333), Inches(0.08))
-    line.fill.solid()
-    line.fill.fore_color.rgb = citi_red_rgb
-    # Remove outline line border if outline attribute exists
+    line_shape = shapes.add_shape(1, Inches(0.5), Inches(2.0), Inches(12.333), Inches(0.08))
+    line_shape.fill.solid()
+    line_shape.fill.fore_color.rgb = citi_red_rgb
     try:
-        line.line.color.rgb = citi_red_rgb
+        line_shape.line.color.rgb = citi_red_rgb
     except Exception:
         pass
 
-    # Content Slide (Executive Summary)
-    slide = prs.slides.add_slide(prs.slide_layouts[1]) 
-    shapes = slide.shapes
-    title_shape = shapes.title
-    title_shape.text = "Executive Summary & Findings"
-    title_shape.text_frame.paragraphs[0].font.color.rgb = citi_blue_rgb
-    
-    body_shape = shapes.placeholders[1]
-    tf = body_shape.text_frame
-    tf.word_wrap = True
-    
-    lines = markdown_content.split("\n")
-    first_bullet = True
-    for line_str in lines:
-        line_str = line_str.strip()
-        if line_str.startswith("* ") or line_str.startswith("- "):
-            if first_bullet:
-                p = tf.paragraphs[0]
-                first_bullet = False
-            else:
-                p = tf.add_paragraph()
-            p.text = line_str[2:]
-            p.level = 0
-            p.font.color.rgb = charcoal_rgb
+    # Create Content Slides
+    max_items_per_slide = 6
+    for idx, sec in enumerate(sections):
+        # Skip creating a content slide for the first section if it has no content
+        if idx == 0 and not sec["content"]:
+            continue
+            
+        title = sec["title"] or "Report Details"
+        content_items = sec["content"]
+        
+        # Split content_items into chunks of max_items_per_slide
+        chunks = [content_items[i:i + max_items_per_slide] for i in range(0, len(content_items), max_items_per_slide)]
+        
+        for chunk_idx, chunk in enumerate(chunks):
+            slide = prs.slides.add_slide(prs.slide_layouts[1]) 
+            shapes = slide.shapes
+            title_shape = shapes.title
+            
+            display_title = title
+            if len(chunks) > 1:
+                display_title += f" (Cont. {chunk_idx + 1})"
+            title_shape.text = display_title
+            title_shape.text_frame.paragraphs[0].font.color.rgb = citi_blue_rgb
+            
+            body_shape = shapes.placeholders[1]
+            tf = body_shape.text_frame
+            tf.word_wrap = True
+            
+            first_para = True
+            for item in chunk:
+                if first_para:
+                    p = tf.paragraphs[0]
+                    first_para = False
+                else:
+                    p = tf.add_paragraph()
+                
+                if item.startswith("* ") or item.startswith("- "):
+                    p.text = item[2:]
+                    p.level = 0
+                else:
+                    p.text = item
+                    p.level = 0
+                p.font.color.rgb = charcoal_rgb
 
     prs.save(output_path)
