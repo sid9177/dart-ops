@@ -8,11 +8,14 @@ class DuckDBHelper:
     def load_csv(self, table_name: str, file_path: str):
         # Normalize the file path to use forward slashes so DuckDB can read it correctly on Windows
         normalized_path = file_path.replace("\\", "/")
-        if normalized_path.endswith((".xlsx", ".xls")):
-            df = pd.read_excel(file_path)
-            self.conn.register(table_name, df)
-        else:
-            self.conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM read_csv_auto('{normalized_path}')")
+        try:
+            if normalized_path.endswith((".xlsx", ".xls")):
+                df = pd.read_excel(file_path)
+                self.conn.register(table_name, df)
+            else:
+                self.conn.execute(f'CREATE OR REPLACE TABLE "{table_name}" AS SELECT * FROM read_csv_auto(\'{normalized_path}\')')
+        except Exception as e:
+            raise IOError(f"Failed to load file '{file_path}': {str(e)}") from e
 
     def get_table_schema(self, table_name: str) -> str:
         try:
