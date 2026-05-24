@@ -70,6 +70,26 @@ You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`
 
 Edit your agent logic in `dart_ops/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
 
+## Working with Data (CSV & Excel)
+
+This project uses an in-memory database (DuckDB) to load and query data instantly. 
+
+To use your own custom data:
+1. **Place your data files**: Copy your `.csv`, `.xlsx`, or `.xls` files into the `data/` directory.
+2. **Update Agent Configurations**: Open the corresponding YAML files in `config/agents/` (e.g., `issues.yaml` or `risk_metrics.yaml`).
+3. **Point to your file**: Change the `file_path` property to point to your new file.
+   ```yaml
+   # Example for Excel
+   file_path: "data/my_custom_data.xlsx"
+   database_table: "my_table_name"
+   ```
+4. **Install Dependencies (Excel only)**: If you are using Excel (`.xlsx`) files, ensure you have pandas and openpyxl installed:
+   ```bash
+   uv add pandas openpyxl
+   ```
+   
+The `AgentRegistry` will automatically load your specified files into DuckDB when the agent starts!
+
 ## Deployment
 
 ```bash
