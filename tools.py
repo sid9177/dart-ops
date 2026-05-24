@@ -201,8 +201,10 @@ def export_report_to_pptx(content: str, filepath: str):
         elif line.startswith('## ') or line.startswith('### '):
             if line.startswith('## '):
                 current_title = line[3:]
+                title_color = citi_red
             else:
                 current_title = line[4:]
+                title_color = citi_blue
             
             slide_layout = prs.slide_layouts[1]
             current_slide = prs.slides.add_slide(slide_layout)
@@ -210,7 +212,7 @@ def export_report_to_pptx(content: str, filepath: str):
             if title_shape:
                 title_shape.text = current_title
                 if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
-                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = title_color
             paragraph_count = 0
 
         else:
