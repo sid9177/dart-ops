@@ -76,8 +76,22 @@ def test_export_report_to_pptx(tmp_path):
     content = "PPTX test content"
     export_report_to_pptx(content, str(pptx_path))
     
-    assert pptx_path.exists()
-    assert pptx_path.read_text(encoding="utf-8") == content
+    try:
+        import pptx
+        has_pptx = True
+    except ImportError:
+        has_pptx = False
+
+    if has_pptx:
+        assert pptx_path.exists()
+        with open(pptx_path, 'rb') as f:
+            # Verify it's a zip file (pptx is a zip), starts with PK
+            assert f.read(2) == b'PK'
+    else:
+        # Fallback behaviour
+        txt_path = tmp_path / "test_report.txt"
+        assert txt_path.exists()
+        assert txt_path.read_text(encoding="utf-8") == content
 
 def test_parse_markdown():
     from tools import parse_markdown

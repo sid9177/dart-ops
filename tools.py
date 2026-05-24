@@ -160,5 +160,100 @@ def export_report_to_pdf(content: str, filepath: str):
     doc.build(story)
 
 def export_report_to_pptx(content: str, filepath: str):
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
+    try:
+        from pptx import Presentation
+        from pptx.util import Inches
+        from pptx.dml.color import RGBColor
+    except ImportError:
+        base, _ = os.path.splitext(filepath)
+        filepath = base + ".txt"
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        return
+
+    citi_blue = RGBColor(0x00, 0x3B, 0x70)
+    citi_red = RGBColor(0xEE, 0x31, 0x24)
+
+    prs = Presentation()
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+
+    current_slide = None
+    current_title = ""
+    paragraph_count = 0
+
+    for line in content.split('\n'):
+        line = line.strip()
+        if not line:
+            continue
+
+        if line.startswith('# '):
+            current_title = line[2:]
+            slide_layout = prs.slide_layouts[0]
+            current_slide = prs.slides.add_slide(slide_layout)
+            title_shape = current_slide.shapes.title
+            if title_shape:
+                title_shape.text = current_title
+                if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
+                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+            paragraph_count = 0
+
+        elif line.startswith('## ') or line.startswith('### '):
+            if line.startswith('## '):
+                current_title = line[3:]
+            else:
+                current_title = line[4:]
+            
+            slide_layout = prs.slide_layouts[1]
+            current_slide = prs.slides.add_slide(slide_layout)
+            title_shape = current_slide.shapes.title
+            if title_shape:
+                title_shape.text = current_title
+                if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
+                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+            paragraph_count = 0
+
+        else:
+            if current_slide is None:
+                current_title = "Report"
+                slide_layout = prs.slide_layouts[1]
+                current_slide = prs.slides.add_slide(slide_layout)
+                title_shape = current_slide.shapes.title
+                if title_shape:
+                    title_shape.text = current_title
+                    if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
+                        title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+                paragraph_count = 0
+                
+            if paragraph_count >= 10:
+                slide_layout = prs.slide_layouts[1]
+                current_slide = prs.slides.add_slide(slide_layout)
+                title_shape = current_slide.shapes.title
+                if title_shape:
+                    title_shape.text = current_title + " (Cont.)"
+                    if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
+                        title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+                paragraph_count = 0
+                
+            try:
+                tf = current_slide.shapes.placeholders[1].text_frame
+            except (IndexError, KeyError):
+                continue
+                
+            if line.startswith('- '):
+                text = line[2:]
+            elif line.startswith('* '):
+                text = line[2:]
+            else:
+                text = line
+
+            if paragraph_count == 0 and not tf.text:
+                p = tf.paragraphs[0]
+                p.text = text
+            else:
+                p = tf.add_paragraph()
+                p.text = text
+            
+            paragraph_count += 1
+            
+    prs.save(filepath)
