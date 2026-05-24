@@ -7,10 +7,25 @@ Agent generated with `agents-cli` version `0.2.0`
 
 ```
 dart-ops/
-├── dart_ops/         # Core agent code
-│   ├── agent.py               # Main agent logic
-│   └── app_utils/             # App utilities and helpers
-├── tests/                     # Unit, integration, and load tests
+├── agent.py                   # Main coordinator agent (entry point)
+├── registry.py                # Agent registry - loads YAML configs & DuckDB tools
+├── db_helper.py               # DuckDB database helper (CSV/Excel → SQL)
+├── tools.py                   # Python execution, PDF & PPTX export tools
+├── config/
+│   ├── agents/                # Chapter agent configurations (YAML)
+│   │   ├── issues.yaml
+│   │   ├── risk_metrics.yaml
+│   │   └── expert_analyst.yaml
+│   └── reviewers/             # LOD reviewer configurations (YAML)
+│       └── second_lod.yaml
+├── data/                      # Data files (CSV/Excel) loaded into DuckDB
+│   ├── issues.csv
+│   └── risk_metrics.csv
+├── dart_ops/                  # Package for deployment (FastAPI app & utilities)
+│   ├── fast_api_app.py
+│   └── app_utils/
+├── reports/                   # Generated PDF/PPTX reports (output)
+├── tests/                     # Unit and integration tests
 ├── GEMINI.md                  # AI-assisted development guide
 └── pyproject.toml             # Project dependencies
 ```
@@ -68,7 +83,7 @@ You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`
 
 ## Development
 
-Edit your agent logic in `dart_ops/agent.py` and test with `agents-cli playground` - it auto-reloads on save.
+Edit your agent logic in `agent.py` (project root) and test with `agents-cli playground` - it auto-reloads on save.
 
 ## Working with Data (CSV & Excel)
 
@@ -83,9 +98,9 @@ To use your own custom data:
    file_path: "data/my_custom_data.xlsx"
    database_table: "my_table_name"
    ```
-4. **Install Dependencies (Excel only)**: If you are using Excel (`.xlsx`) files, ensure you have pandas and openpyxl installed:
+4. **Install Export Dependencies (optional)**: To enable Excel support and PDF/PPTX export:
    ```bash
-   uv add pandas openpyxl
+   uv sync --extra export
    ```
    
 The `AgentRegistry` will automatically load your specified files into DuckDB when the agent starts!

@@ -20,7 +20,16 @@ WORKDIR /code
 
 COPY ./pyproject.toml ./README.md ./uv.lock* ./
 
+# Copy the dart_ops package
 COPY ./dart_ops ./dart_ops
+
+# Copy root-level agent modules (canonical source)
+COPY ./agent.py ./registry.py ./db_helper.py ./tools.py ./
+COPY ./__init__.py ./__init__.py
+
+# Copy configuration and data files
+COPY ./config ./config
+COPY ./data ./data
 
 RUN uv sync --frozen
 
