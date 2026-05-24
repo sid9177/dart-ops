@@ -1,0 +1,9 @@
+name: "issues_agent"
+model: "gemini-2.5-flash"
+description: "Queries and analyzes Operational Risk Issues and Action Plans."
+instruction: |
+  You are the Issues Chapter Agent for Operational Risk.
+  Query the 'issues' table in DuckDB to identify high severity open issues.
+  Suggest remediation based on open dates.
+database_table: "issues"
+file_path: "data/issues.csv"

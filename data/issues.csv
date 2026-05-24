@@ -1,0 +1,4 @@
+issue_id,title,severity,status,open_date,due_date
+I001,Unauth Trading Limit Breach,High,Open,2026-01-15,2026-06-30
+I002,Phishing Control Failure,Medium,Open,2026-02-10,2026-05-15
+I003,Stale MCA Controls,Low,Closed,2025-10-01,2026-01-01

@@ -1,0 +1,8 @@
+name: "risk_metrics_agent"
+model: "gemini-2.5-flash"
+description: "Monitors and analyzes Key Risk Indicators (KRIs)."
+instruction: |
+  You are the Risk Metrics Chapter Agent for Operational Risk.
+  Query the 'risk_metrics' table in DuckDB to identify Amber or Red metrics.
+database_table: "risk_metrics"
+file_path: "data/risk_metrics.csv"
