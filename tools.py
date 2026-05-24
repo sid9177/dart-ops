@@ -178,53 +178,42 @@ def export_report_to_pptx(content: str, filepath: str):
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
 
+    elements = parse_markdown(content)
+
     current_slide = None
-    current_title = ""
+    current_title = "Report"
+    current_title_color = citi_blue
     paragraph_count = 0
 
-    for line in content.split('\n'):
-        line = line.strip()
-        if not line:
-            continue
-
-        if line.startswith('# '):
-            current_title = line[2:]
-            slide_layout = prs.slide_layouts[0]
-            current_slide = prs.slides.add_slide(slide_layout)
-            title_shape = current_slide.shapes.title
-            if title_shape:
-                title_shape.text = current_title
-                if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
-                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
-            paragraph_count = 0
-
-        elif line.startswith('## ') or line.startswith('### '):
-            if line.startswith('## '):
-                current_title = line[3:]
-                title_color = citi_red
-            else:
-                current_title = line[4:]
-                title_color = citi_blue
+    for element in elements:
+        if element["type"] == "header":
+            level = element["level"]
+            current_title = element["text"]
             
-            slide_layout = prs.slide_layouts[1]
+            if level == 1:
+                slide_layout = prs.slide_layouts[0]
+                current_title_color = citi_blue
+            else:
+                slide_layout = prs.slide_layouts[1]
+                current_title_color = citi_red if level == 2 else citi_blue
+                
             current_slide = prs.slides.add_slide(slide_layout)
             title_shape = current_slide.shapes.title
             if title_shape:
                 title_shape.text = current_title
                 if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
-                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = title_color
+                    title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = current_title_color
             paragraph_count = 0
-
-        else:
+            
+        elif element["type"] in ["bullet", "paragraph"]:
             if current_slide is None:
-                current_title = "Report"
                 slide_layout = prs.slide_layouts[1]
                 current_slide = prs.slides.add_slide(slide_layout)
                 title_shape = current_slide.shapes.title
                 if title_shape:
                     title_shape.text = current_title
                     if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
-                        title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+                        title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = current_title_color
                 paragraph_count = 0
                 
             if paragraph_count >= 10:
@@ -234,7 +223,7 @@ def export_report_to_pptx(content: str, filepath: str):
                 if title_shape:
                     title_shape.text = current_title + " (Cont.)"
                     if title_shape.text_frame.paragraphs and title_shape.text_frame.paragraphs[0].runs:
-                        title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = citi_blue
+                        title_shape.text_frame.paragraphs[0].runs[0].font.color.rgb = current_title_color
                 paragraph_count = 0
                 
             try:
@@ -242,20 +231,17 @@ def export_report_to_pptx(content: str, filepath: str):
             except (IndexError, KeyError):
                 continue
                 
-            if line.startswith('- '):
-                text = line[2:]
-            elif line.startswith('* '):
-                text = line[2:]
-            else:
-                text = line
-
             if paragraph_count == 0 and not tf.text:
                 p = tf.paragraphs[0]
-                p.text = text
             else:
                 p = tf.add_paragraph()
-                p.text = text
-            
+                
+            p.text = element["text"]
+            if element["type"] == "bullet":
+                p.level = element["level"]
+            else:
+                p.level = 0
+                
             paragraph_count += 1
             
     prs.save(filepath)
