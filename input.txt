@@ -1,0 +1,7 @@
+I have created a beginner agent by following the google adk guide from here https://adk.dev/.
+I am looking to create amulti agent system. To give you background around this project,
+I work in Operational Risk Reporting and Analytics in Citibank and looking to create multi agent system for this using google adk. The multi agent system shouldb e focused on reporting and analytics using the excel/ csv data that I will provide. The multi agent system should be highest performant with very less latency for querying the data, analyzing and producing reports.
+I am looking to replicate the multi agent system based on the current team structure where each chapter within Operational Risk is agentic (Risk metrics, Issues, Internal Losses, Near Misses, MCA, I can have other chapters so the agentic system needs to be extensible) On top of this we also need to have expert analyst and reporting agents. Also it is very important to have 1st LOD, 2nd LOD, 3rd LOD, Internal Audit, Regulators view (I am assuming skills will be the best for the perspectives).
+This project should be such that I will develop in my personal computer here and I will host this on github. On my work computer, I will download the project files, give descriptions, instructions, skills etc. I will create descriptions, instructions, skills based on the policies, procedures that my company has internally.
+
+Let's brainstorm thoroughly
