@@ -77,10 +77,10 @@ def test_registry_load_and_register(tmp_path):
     # Verify get_all_tools generates wrapper callables
     tools = registry.get_all_tools()
     assert len(tools) == 2
-    p2p_tool_names = [t.__name__ for t in tools]
-    assert "call_issues_agent" in p2p_tool_names
-    assert "call_second_lod_agent" in p2p_tool_names
+    p2p_tool_names = [t.name for t in tools]
+    assert "issues_agent" in p2p_tool_names
+    assert "second_lod_agent" in p2p_tool_names
 
     # Verify docs are set correctly
-    issues_tool = next(t for t in tools if t.__name__ == "call_issues_agent")
-    assert "Queries issues." in issues_tool.__doc__
+    issues_tool = next(t for t in tools if t.name == "issues_agent")
+    assert "Queries issues." in issues_tool._get_declaration().description

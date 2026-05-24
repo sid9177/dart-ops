@@ -48,10 +48,22 @@ def test_coordinator_happy_path_with_revision():
         coordinator._registry.reviewer_names = ["second_lod_agent"]
         
         # Define mock behaviors
-        issues_mock.run.return_value = "Issues: MOCK_ISSUES"
-        metrics_mock.run.return_value = "Metrics: MOCK_METRICS"
-        analyst_mock.run.side_effect = ["Draft Report v1", "Draft Report v2 (Revised)"]
-        second_lod_mock.run.return_value = "Review: Looks good, no challenges."
+        async def mock_run_subagent(agent, ctx, prompt):
+            if agent == issues_mock:
+                return "Issues: MOCK_ISSUES"
+            if agent == metrics_mock:
+                return "Metrics: MOCK_METRICS"
+            if agent == analyst_mock:
+                if not hasattr(mock_run_subagent, "analyst_calls"):
+                    mock_run_subagent.analyst_calls = 0
+                val = ["Draft Report v1", "Draft Report v2 (Revised)"][mock_run_subagent.analyst_calls]
+                mock_run_subagent.analyst_calls += 1
+                return val
+            if agent == second_lod_mock:
+                return "Review: Looks good, no challenges."
+            return ""
+            
+        coordinator._run_subagent = mock_run_subagent
         
         # Setup runner
         session_service = InMemorySessionService()
@@ -131,16 +143,27 @@ def test_coordinator_reviewer_challenge_and_sequential():
         # Run two reviewers sequentially
         coordinator._registry.reviewer_names = ["second_lod_agent", "third_lod_agent"]
         
-        issues_mock.run.return_value = "Issues: OK"
-        metrics_mock.run.return_value = "Metrics: OK"
-        analyst_mock.run.return_value = "Draft Report v1"
-        
-        # second_lod challenges first, then is satisfied. third_lod is immediately satisfied.
-        second_lod_mock.run.side_effect = [
-            "[CHALLENGE]: Why is Amber metric M002 not covered by issues?",
-            "Resolved. Looks good now."
-        ]
-        third_lod_mock.run.return_value = "Third LOD comments: Pass."
+        async def mock_run_subagent(agent, ctx, prompt):
+            if agent == issues_mock:
+                return "Issues: OK"
+            if agent == metrics_mock:
+                return "Metrics: OK"
+            if agent == analyst_mock:
+                return "Draft Report v1"
+            if agent == second_lod_mock:
+                if not hasattr(mock_run_subagent, "second_lod_calls"):
+                    mock_run_subagent.second_lod_calls = 0
+                val = [
+                    "[CHALLENGE]: Why is Amber metric M002 not covered by issues?",
+                    "Resolved. Looks good now."
+                ][mock_run_subagent.second_lod_calls]
+                mock_run_subagent.second_lod_calls += 1
+                return val
+            if agent == third_lod_mock:
+                return "Third LOD comments: Pass."
+            return ""
+            
+        coordinator._run_subagent = mock_run_subagent
         
         session_service = InMemorySessionService()
         user_id = "test_user"
