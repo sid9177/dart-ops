@@ -89,8 +89,75 @@ def parse_markdown(markdown_content: str):
     return elements
 
 def export_report_to_pdf(content: str, filepath: str):
-    with open(filepath, "w", encoding="utf-8") as f:
-        f.write(content)
+    try:
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.colors import HexColor
+    except ImportError:
+        base, _ = os.path.splitext(filepath)
+        filepath = base + ".txt"
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        return
+
+    citi_blue = HexColor('#003B70')
+    citi_red = HexColor('#EE3124')
+    citi_text = HexColor('#222222')
+
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Heading1'],
+        textColor=citi_blue,
+        fontSize=24,
+        spaceAfter=12
+    )
+    
+    h2_style = ParagraphStyle(
+        'Heading2Style',
+        parent=styles['Heading2'],
+        textColor=citi_red,
+        fontSize=18,
+        spaceAfter=10
+    )
+    
+    h3_style = ParagraphStyle(
+        'Heading3Style',
+        parent=styles['Heading3'],
+        textColor=citi_blue,
+        fontSize=14,
+        spaceAfter=8
+    )
+    
+    normal_style = ParagraphStyle(
+        'NormalStyle',
+        parent=styles['Normal'],
+        textColor=citi_text,
+        fontSize=11,
+        spaceAfter=6
+    )
+
+    doc = SimpleDocTemplate(filepath)
+    story = []
+
+    for line in content.split('\n'):
+        if line.startswith('###'):
+            text = html.escape(line[3:].lstrip())
+            story.append(Paragraph(text, h3_style))
+        elif line.startswith('##'):
+            text = html.escape(line[2:].lstrip())
+            story.append(Paragraph(text, h2_style))
+        elif line.startswith('#'):
+            text = html.escape(line[1:].lstrip())
+            story.append(Paragraph(text, title_style))
+        elif not line.strip():
+            story.append(Spacer(1, 12))
+        else:
+            text = html.escape(line)
+            story.append(Paragraph(text, normal_style))
+
+    doc.build(story)
 
 def export_report_to_pptx(content: str, filepath: str):
     with open(filepath, "w", encoding="utf-8") as f:

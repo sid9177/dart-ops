@@ -52,8 +52,22 @@ def test_export_report_to_pdf(tmp_path):
     content = "PDF test content"
     export_report_to_pdf(content, str(pdf_path))
     
-    assert pdf_path.exists()
-    assert pdf_path.read_text(encoding="utf-8") == content
+    try:
+        import reportlab
+        has_reportlab = True
+    except ImportError:
+        has_reportlab = False
+
+    if has_reportlab:
+        assert pdf_path.exists()
+        # Verify it looks like a PDF (starts with %PDF)
+        with open(pdf_path, 'rb') as f:
+            assert f.read(4) == b'%PDF'
+    else:
+        # Fallback behaviour
+        txt_path = tmp_path / "test_report.txt"
+        assert txt_path.exists()
+        assert txt_path.read_text(encoding="utf-8") == content
 
 def test_export_report_to_pptx(tmp_path):
     pptx_path = tmp_path / "test_report.pptx"
