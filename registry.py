@@ -30,20 +30,20 @@ class AgentRegistry:
                 # 2. Create tools bounded to this table
                 tools = []
                 if table_name:
-                    def get_schema() -> str:
-                        """Get the schema of the assigned database table."""
-                        return self.db_helper.get_table_schema(table_name)
-                    get_schema.__name__ = f"get_{table_name}_schema"
-                    
-                    def run_sql(sql_query: str) -> str:
-                        """Run a SQL query against the database."""
-                        return self.db_helper.run_sql_query(sql_query)
-                    run_sql.__name__ = f"query_{table_name}_table"
+                    def create_tools(bound_table: str):
+                        def get_schema() -> dict:
+                            """Get the schema of the assigned database table."""
+                            return {"schema": self.db_helper.get_table_schema(bound_table)}
+                        get_schema.__name__ = f"get_{bound_table}_schema"
+                        
+                        def run_sql(sql_query: str) -> dict:
+                            """Run a SQL query against the database."""
+                            return {"result": self.db_helper.run_sql_query(sql_query)}
+                        run_sql.__name__ = f"query_{bound_table}_table"
 
-                    tools = [
-                        get_schema,
-                        run_sql
-                    ]
+                        return [get_schema, run_sql]
+                    
+                    tools = create_tools(table_name)
 
                 # 3. Instantiate ADK Agent
                 agent = Agent(
