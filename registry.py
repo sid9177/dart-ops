@@ -8,6 +8,8 @@ class AgentRegistry:
     def __init__(self, db_helper: DuckDBHelper):
         self.db_helper = db_helper
         self.agents: dict[str, Agent] = {}
+        self.reviewers: dict[str, Agent] = {}
+        self.reviewer_names: list[str] = []
 
     def _create_agent_tools(self, bound_table: str) -> list:
         def get_schema() -> dict:
@@ -54,3 +56,22 @@ class AgentRegistry:
                     tools=tools
                 )
                 self.agents[config["name"]] = agent
+
+    def load_reviewer_agents(self, config_dir: str):
+        if not os.path.exists(config_dir):
+            return
+
+        for filename in os.listdir(config_dir):
+            if filename.endswith(".yaml") or filename.endswith(".yml"):
+                filepath = os.path.join(config_dir, filename)
+                with open(filepath, "r") as f:
+                    config = yaml.safe_load(f)
+
+                agent = Agent(
+                    name=config["name"],
+                    model=config.get("model", "gemini-2.5-flash"),
+                    instruction=config.get("instruction", ""),
+                    tools=[]
+                )
+                self.reviewers[config["name"]] = agent
+                self.reviewer_names.append(config["name"])

@@ -87,3 +87,50 @@ def test_registry_load_and_register(tmp_path):
     # 4. Verify no tools for Agent 2
     agent2 = registry.agents["test_agent_2"]
     assert len(agent2.tools) == 0
+
+def test_registry_load_reviewer_agents(tmp_path):
+    db = MockDuckDBHelper()
+    registry = AgentRegistry(db)
+    
+    config_dir = tmp_path / "reviewers"
+    config_dir.mkdir()
+    
+    # Reviewer 1
+    reviewer1_file = config_dir / "reviewer1.yaml"
+    reviewer1_data = {
+        "name": "reviewer_1",
+        "instruction": "Test instruction for reviewer 1"
+    }
+    with open(reviewer1_file, "w") as f:
+        yaml.dump(reviewer1_data, f)
+
+    # Reviewer 2
+    reviewer2_file = config_dir / "reviewer2.yaml"
+    reviewer2_data = {
+        "name": "reviewer_2",
+        "model": "test-model",
+        "instruction": "Test instruction for reviewer 2"
+    }
+    with open(reviewer2_file, "w") as f:
+        yaml.dump(reviewer2_data, f)
+        
+    registry.load_reviewer_agents(str(config_dir))
+    
+    assert len(registry.reviewers) == 2
+    assert "reviewer_1" in registry.reviewers
+    assert "reviewer_2" in registry.reviewers
+    
+    assert registry.reviewer_names == ["reviewer_1", "reviewer_2"] or registry.reviewer_names == ["reviewer_2", "reviewer_1"]
+    
+    rev1 = registry.reviewers["reviewer_1"]
+    assert rev1.name == "reviewer_1"
+    assert rev1.instruction == "Test instruction for reviewer 1"
+    assert rev1.model == "gemini-2.5-flash"
+    assert len(rev1.tools) == 0
+
+    rev2 = registry.reviewers["reviewer_2"]
+    assert rev2.name == "reviewer_2"
+    assert rev2.instruction == "Test instruction for reviewer 2"
+    assert rev2.model == "test-model"
+    assert len(rev2.tools) == 0
+
