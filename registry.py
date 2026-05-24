@@ -8,6 +8,7 @@ class AgentRegistry:
     def __init__(self, config_dir: str = "config"):
         self.config_dir = config_dir
         self.agents = {}
+        self.reviewer_names = []
         self.db = DuckDBHelper()
 
     def load_configs(self):
@@ -16,7 +17,7 @@ class AgentRegistry:
         if os.path.exists(agents_path):
             for f in os.listdir(agents_path):
                 if f.endswith(".yaml") or f.endswith(".yml"):
-                    with open(os.path.join(agents_path, f), "r") as stream:
+                    with open(os.path.join(agents_path, f), "r", encoding="utf-8") as stream:
                         config = yaml.safe_load(stream)
                         self._register_agent(config, is_reviewer=False)
                         
@@ -25,7 +26,7 @@ class AgentRegistry:
         if os.path.exists(reviewers_path):
             for f in os.listdir(reviewers_path):
                 if f.endswith(".yaml") or f.endswith(".yml"):
-                    with open(os.path.join(reviewers_path, f), "r") as stream:
+                    with open(os.path.join(reviewers_path, f), "r", encoding="utf-8") as stream:
                         config = yaml.safe_load(stream)
                         self._register_agent(config, is_reviewer=True)
 
@@ -71,6 +72,8 @@ class AgentRegistry:
             tools=agent_tools
         )
         self.agents[name] = agent
+        if is_reviewer and name not in self.reviewer_names:
+            self.reviewer_names.append(name)
 
     def get_all_tools(self) -> list:
         # Wrap each agent as an ADK tool

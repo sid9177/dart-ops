@@ -22,6 +22,9 @@ class DuckDBHelper:
             raise IOError(f"Failed to load file '{file_path}': {str(e)}") from e
 
     def get_table_schema(self, table_name: str) -> str:
+        import re
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+            raise ValueError(f"Invalid table name: '{table_name}'")
         try:
             res = self.conn.execute(f"DESCRIBE {table_name}").fetchall()
             schema_lines = [f"{row[0]} ({row[1]})" for row in res]
