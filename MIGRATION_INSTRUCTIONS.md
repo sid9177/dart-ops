@@ -23,9 +23,9 @@ All custom Python tools have been consolidated into a single file to match Helix
   - *IMPORTANT: You must migrate `data/issues.csv` and `data/risk_metrics.csv` to your root directory. The DuckDB tool queries these local CSV files!*
 
 ## 3. Dependencies
-Our custom DuckDB tool introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
+Our custom code introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
 
-- **Dependencies**: Add `duckdb` and `pandas` to your Helix environment.
+- **Dependencies**: Add `duckdb`, `pandas`, and `pyyaml` to your Helix environment.
   - *Reference: See the `dependencies` array in our local [pyproject.toml](./pyproject.toml).*
 
 ## 4. Skills (Knowledge Base)
@@ -33,7 +33,13 @@ You should migrate your markdown files to the skills directory.
 
 - Example: [app/helix_agent/skills/regulator_perspective.md](./app/helix_agent/skills/regulator_perspective.md)
 
-## 4. Environment & Evaluation (Testing)
+## 5. Environment & Evaluation (Testing)
 - **Environment**: [files/config/.env](./files/config/.env)
 - **Evalset**: [tests/eval/evalsets/hierarchy_evalset.json](./tests/eval/evalsets/hierarchy_evalset.json)
 - **Rubrics/Metrics**: [tests/eval/eval_config.json](./tests/eval/eval_config.json)
+
+## 6. Critical Edge Cases & Gotchas
+Before spinning up your Helix environment, verify the following:
+
+- **The DuckDB Working Directory Trap**: In your `issues.yaml` and `risk_metrics.yaml`, the agent is told to query `'data/issues.csv'`. If your Helix startup script (`app.sh`) executes Python from inside the `app/` folder instead of the project root, DuckDB will try to find `app/data/issues.csv` and crash. If this happens, update the YAML files to use absolute paths (e.g., `'/app/workspace/data/issues.csv'`) or relative paths (`'../data/issues.csv'`).
+- **API Keys & Quotas**: Ensure your Helix secret manager has the `GOOGLE_API_KEY` correctly configured. The YAML files hardcode the model to `gemini-2.5-flash`; ensure your environment has quota for this specific model variant to prevent 404/429 errors.
