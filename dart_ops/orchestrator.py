@@ -13,10 +13,11 @@ def create_orchestrator(chapter_agents: dict) -> Agent:
         def chapter_caller(query: str, agent_instance=agent) -> str:
             """Sends a query to a specific Operational Risk Chapter."""
             # Note: actual ADK invoke syntax used here
-            return agent_instance.invoke(query)
+            return str(agent_instance.invoke(query))
             
         # Rename function to avoid collisions
-        chapter_caller.__name__ = f"ask_{name.lower()}_chapter"
+        safe_name = name.lower().replace(' ', '_').replace('-', '_')
+        chapter_caller.__name__ = f"ask_{safe_name}_chapter"
         chapter_caller.__doc__ = f"Use this tool to ask questions and get data from the {name} chapter."
         
         tool = FunctionTool(func=chapter_caller)
