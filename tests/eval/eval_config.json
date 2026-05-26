@@ -1,0 +1,31 @@
+{
+  "criteria": {
+    "tool_trajectory_avg_score": {
+      "threshold": 1.0,
+      "match_type": "IN_ORDER"
+    },
+    "rubric_based_final_response_quality_v1": {
+      "threshold": 0.8,
+      "rubrics": [
+        {
+          "rubric_id": "hallucination_prevention",
+          "rubric_content": {
+            "text_property": "The agent must not invent issues or metrics that were not provided in the tool output. If no data is found, it must explicitly state that."
+          }
+        },
+        {
+          "rubric_id": "outlier_refusal",
+          "rubric_content": {
+            "text_property": "If the user asks an irrelevant or out-of-domain question, the agent should politely refuse to answer without attempting to fetch data or hallucinate a response."
+          }
+        },
+        {
+          "rubric_id": "ambiguity_handling",
+          "rubric_content": {
+            "text_property": "If the user query is ambiguous, the agent must ask for clarification instead of guessing a specific risk chapter."
+          }
+        }
+      ]
+    }
+  }
+}

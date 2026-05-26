@@ -1,0 +1,78 @@
+{
+  "eval_set_id": "hierarchy_eval_set",
+  "name": "Hierarchy Evaluation Set",
+  "description": "Tests the hierarchical delegation pattern and edge cases.",
+  "eval_cases": [
+    {
+      "eval_id": "happy_path_issues",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": { "parts": [{ "text": "What are the high severity issues?" }] },
+          "intermediate_data": {
+            "tool_uses": [
+              { "name": "issues_chapter", "args": {"query": "What are the high severity issues?"} }
+            ]
+          }
+        }
+      ],
+      "session_input": { "app_name": "dart_ops", "user_id": "eval_user_1", "state": {} }
+    },
+    {
+      "eval_id": "happy_path_risk_metrics",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": { "parts": [{ "text": "What metrics are Amber or Red?" }] },
+          "intermediate_data": {
+            "tool_uses": [
+              { "name": "risk_metrics_chapter", "args": {"query": "What metrics are Amber or Red?"} }
+            ]
+          }
+        }
+      ],
+      "session_input": { "app_name": "dart_ops", "user_id": "eval_user_2", "state": {} }
+    },
+    {
+      "eval_id": "edge_case_ambiguous",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": { "parts": [{ "text": "What's going wrong right now?" }] },
+          "intermediate_data": {
+            "tool_uses": []
+          }
+        }
+      ],
+      "session_input": { "app_name": "dart_ops", "user_id": "eval_user_3", "state": {} }
+    },
+    {
+      "eval_id": "outlier_irrelevant",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": { "parts": [{ "text": "What's the weather in New York?" }] },
+          "intermediate_data": {
+            "tool_uses": []
+          }
+        }
+      ],
+      "session_input": { "app_name": "dart_ops", "user_id": "eval_user_4", "state": {} }
+    },
+    {
+      "eval_id": "edge_case_missing_data",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": { "parts": [{ "text": "Are there any Critical severity issues?" }] },
+          "intermediate_data": {
+            "tool_uses": [
+              { "name": "issues_chapter", "args": {"query": "Are there any Critical severity issues?"} }
+            ]
+          }
+        }
+      ],
+      "session_input": { "app_name": "dart_ops", "user_id": "eval_user_5", "state": {} }
+    }
+  ]
+}

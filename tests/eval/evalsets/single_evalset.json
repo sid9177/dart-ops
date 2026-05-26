@@ -1,0 +1,22 @@
+{
+  "eval_set_id": "single_eval_set",
+  "name": "Single Case Evaluation Set",
+  "description": "Tests just one path to avoid rate limits",
+  "eval_cases": [
+    {
+      "eval_id": "happy_path_issues",
+      "conversation": [
+        {
+          "invocation_id": "inv_1",
+          "user_content": { "parts": [{ "text": "What are the high severity issues?" }] },
+          "intermediate_data": {
+            "tool_uses": [
+              { "name": "issues_chapter", "args": {"query": "What are the high severity issues?"} }
+            ]
+          }
+        }
+      ],
+      "session_input": { "app_name": "dart_ops", "user_id": "eval_user_1", "state": {} }
+    }
+  ]
+}
