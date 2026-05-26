@@ -22,7 +22,13 @@ All custom Python tools have been consolidated into a single file to match Helix
 - **Database Files**: `data/*.csv`
   - *IMPORTANT: You must migrate `data/issues.csv` and `data/risk_metrics.csv` to your root directory. The DuckDB tool queries these local CSV files!*
 
-## 3. Skills (Knowledge Base)
+## 3. Dependencies
+Our custom DuckDB tool introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
+
+- **Dependencies**: Add `duckdb` and `pandas` to your Helix environment.
+  - *Reference: See the `dependencies` array in our local [pyproject.toml](./pyproject.toml).*
+
+## 4. Skills (Knowledge Base)
 You should migrate your markdown files to the skills directory.
 
 - Example: [app/helix_agent/skills/regulator_perspective.md](./app/helix_agent/skills/regulator_perspective.md)
