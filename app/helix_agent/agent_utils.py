@@ -1,14 +1,22 @@
 import os
+import yaml
 from google.adk.agents import Agent
-from google.adk.tools import FunctionTool
-from dart_ops.tool_registry import REGISTRY
-from dart_ops.config_reader import load_chapters_config
+from google.adk.tools import FunctionTool, BaseTool
+from app.helix_agent.tools import REGISTRY
+
+def load_chapters_config(file_path: str) -> dict:
+    with open(file_path, 'r') as f:
+        return yaml.safe_load(f)
 
 def create_all_agents() -> dict:
     """Reads all agent YAML configs, builds them, and returns a dictionary of Agents."""
-    config_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config", "agents")
+    # Look for sub_agents dir in the same directory as this file
+    config_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sub_agents")
     agents = {}
     
+    if not os.path.exists(config_dir):
+        return agents
+        
     # First pass: Build all chapter agents
     for filename in os.listdir(config_dir):
         if filename.endswith(".yaml") and filename != "orchestrator.yaml":
@@ -16,7 +24,6 @@ def create_all_agents() -> dict:
             config = load_chapters_config(file_path)
             
             agent_tools = []
-            from google.adk.tools import BaseTool
             for tool_name in config.get("tools", []):
                 if tool_name in REGISTRY:
                     tool_obj = REGISTRY[tool_name]
@@ -63,6 +70,5 @@ def create_all_agents() -> dict:
         
     return agents
 
-# Instantiate and export the orchestrator so it can be auto-discovered by ADK
 all_agents = create_all_agents()
 orchestrator_agent = all_agents.get("orchestrator")

@@ -1,4 +1,4 @@
-from dart_ops.agent_factory import create_all_agents
+from app.helix_agent.agent_utils import create_all_agents
 
 def test_create_all_agents():
     agents = create_all_agents()
@@ -8,7 +8,7 @@ def test_create_all_agents():
     assert "analyst" in agents
     assert "reporter" in agents
     
-    from dart_ops.tool_registry import REGISTRY
+    from app.helix_agent.tools import REGISTRY
     assert "analyst" in REGISTRY
     assert "reporter" in REGISTRY
     

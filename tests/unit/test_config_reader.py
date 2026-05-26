@@ -1,7 +1,7 @@
 import os
 import yaml
 import pytest
-from dart_ops.config_reader import load_chapters_config
+from app.helix_agent.agent_utils import load_chapters_config
 
 def test_load_chapters_config(tmp_path):
     # Create a dummy yaml file

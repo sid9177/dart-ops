@@ -1,5 +1,5 @@
 import os
-from dart_ops.skill_tool import list_skills, read_skill, get_skills_dir
+from app.helix_agent.tools import list_skills, read_skill, get_skills_dir
 
 def test_list_skills():
     skills = list_skills()

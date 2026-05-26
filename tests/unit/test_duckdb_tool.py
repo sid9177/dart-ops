@@ -1,6 +1,7 @@
 import os
+import pytest
 import duckdb
-from dart_ops.duckdb_tool import execute_duckdb_query
+from app.helix_agent.tools import execute_duckdb_query
 
 def test_execute_duckdb_query(tmp_path):
     # Setup dummy csv

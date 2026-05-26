@@ -1,9 +1,20 @@
 import os
 import glob
+import duckdb
 
+# --- DUCKDB TOOL ---
+def execute_duckdb_query(query: str) -> str:
+    """Executes a SQL query using DuckDB and returns the result as a string."""
+    try:
+        result = duckdb.query(query).df()
+        return result.to_string()
+    except Exception as e:
+        return f"Query Failed: {str(e)}. Please correct your SQL."
+
+# --- SKILL TOOLS ---
 def get_skills_dir() -> str:
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    return os.path.join(base_dir, "skills")
+    # Look for the 'skills' folder in the same directory as this file
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "skills")
 
 def list_skills() -> str:
     """Lists all available markdown skills in the skills directory."""
@@ -36,3 +47,10 @@ def read_skill(skill_name: str) -> str:
             return f.read()
     except Exception as e:
         return f"Error reading skill: {str(e)}"
+
+# --- REGISTRY ---
+REGISTRY = {
+    "execute_duckdb_query": execute_duckdb_query,
+    "list_skills": list_skills,
+    "read_skill": read_skill,
+}
