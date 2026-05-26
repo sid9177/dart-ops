@@ -2,7 +2,7 @@ import os
 import yaml
 from google.adk.agents import Agent
 from google.adk.tools import FunctionTool, BaseTool
-from app.helix_agent.tools import REGISTRY
+from .tools import REGISTRY
 
 def load_chapters_config(file_path: str) -> dict:
     with open(file_path, 'r') as f:
