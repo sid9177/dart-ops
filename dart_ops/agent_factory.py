@@ -16,9 +16,14 @@ def create_all_agents() -> dict:
             config = load_chapters_config(file_path)
             
             agent_tools = []
+            from google.adk.tools import BaseTool
             for tool_name in config.get("tools", []):
                 if tool_name in REGISTRY:
-                    agent_tools.append(FunctionTool(func=REGISTRY[tool_name]))
+                    tool_obj = REGISTRY[tool_name]
+                    if isinstance(tool_obj, BaseTool):
+                        agent_tools.append(tool_obj)
+                    else:
+                        agent_tools.append(FunctionTool(func=tool_obj))
             
             agent = Agent(
                 name=config.get("name", filename.replace(".yaml", "")),
@@ -28,16 +33,11 @@ def create_all_agents() -> dict:
             )
             agents[config.get("name")] = agent
             
-            # Dynamically register the chapter caller tool
-            def chapter_caller(query: str, agent_instance=agent) -> str:
-                """Sends a query to a specific Operational Risk Chapter."""
-                return str(agent_instance.invoke(query))
-                
-            safe_name = config.get("name").lower().replace(' ', '_').replace('-', '_')
-            chapter_caller.__name__ = f"ask_{safe_name}"
-            chapter_caller.__doc__ = config.get("description", f"Use this tool to ask questions and get data from the {config.get('name')} chapter.")
+            from google.adk.tools import AgentTool
+            agent.description = config.get("description", f"Use this agent for queries related to {config.get('name')}.")
+            chapter_caller = AgentTool(agent)
             
-            REGISTRY[chapter_caller.__name__] = chapter_caller
+            REGISTRY[chapter_caller.name] = chapter_caller
 
     # Second pass: Build Orchestrator
     orchestrator_path = os.path.join(config_dir, "orchestrator.yaml")
@@ -47,7 +47,11 @@ def create_all_agents() -> dict:
         orch_tools = []
         for tool_name in orch_config.get("tools", []):
             if tool_name in REGISTRY:
-                orch_tools.append(FunctionTool(func=REGISTRY[tool_name]))
+                tool_obj = REGISTRY[tool_name]
+                if isinstance(tool_obj, BaseTool):
+                    orch_tools.append(tool_obj)
+                else:
+                    orch_tools.append(FunctionTool(func=tool_obj))
                 
         orchestrator = Agent(
             name=orch_config.get("name", "expert_analyst_orchestrator"),

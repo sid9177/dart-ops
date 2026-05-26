@@ -7,23 +7,23 @@ Agent generated with `agents-cli` version `0.2.0`
 
 ```
 dart-ops/
-├── agent.py                   # Main coordinator agent (entry point)
-├── registry.py                # Agent registry - loads YAML configs & DuckDB tools
-├── db_helper.py               # DuckDB database helper (CSV/Excel → SQL)
-├── tools.py                   # Python execution, PDF & PPTX export tools
 ├── config/
-│   ├── agents/                # Chapter agent configurations (YAML)
+│   ├── agents/                # All agent configurations (YAML)
 │   │   ├── issues.yaml
 │   │   ├── risk_metrics.yaml
-│   │   └── expert_analyst.yaml
+│   │   └── orchestrator.yaml
 │   └── reviewers/             # LOD reviewer configurations (YAML)
 │       └── second_lod.yaml
 ├── data/                      # Data files (CSV/Excel) loaded into DuckDB
 │   ├── issues.csv
 │   └── risk_metrics.csv
-├── dart_ops/                  # Package for deployment (FastAPI app & utilities)
-│   ├── fast_api_app.py
-│   └── app_utils/
+├── dart_ops/                  # Python Package
+│   ├── agent_factory.py       # Reads YAML configs and builds ADK agents
+│   ├── tool_registry.py       # Central registry for tools available to agents
+│   ├── duckdb_tool.py         # DuckDB execution tool
+│   ├── config_reader.py       # YAML parsing utility
+│   ├── fast_api_app.py        # Main entrypoint / FastAPI application
+│   └── app_utils/             # Utilities (telemetry, etc.)
 ├── reports/                   # Generated PDF/PPTX reports (output)
 ├── tests/                     # Unit and integration tests
 ├── GEMINI.md                  # AI-assisted development guide

@@ -9,8 +9,8 @@ def test_create_all_agents():
     assert "reporter" in agents
     
     from dart_ops.tool_registry import REGISTRY
-    assert "ask_analyst" in REGISTRY
-    assert "ask_reporter" in REGISTRY
+    assert "analyst" in REGISTRY
+    assert "reporter" in REGISTRY
     
-    # Check that docstrings use the description from yaml
-    assert "Synthesizes raw data" in REGISTRY["ask_reporter"].__doc__
+    # Check that tool descriptions use the description from yaml
+    assert "Synthesizes raw data" in REGISTRY["reporter"].description

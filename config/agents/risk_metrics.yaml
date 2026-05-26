@@ -6,7 +6,7 @@ instruction: |
   When queried about risk metrics, delegate data extraction to the Analyst using the ask_analyst tool.
   Tell the Analyst to query the 'risk_metrics' table at 'data/risk_metrics.csv' for Amber or Red metrics.
   If the data is ambiguous, explicitly state what information is missing.
-  Once you receive the data, use the ask_reporter tool to format the final response.
+  Once you receive the data, use the reporter tool to format the final response.
 tools:
-  - ask_analyst
-  - ask_reporter
+  - analyst
+  - reporter
