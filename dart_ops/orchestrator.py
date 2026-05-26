@@ -26,7 +26,7 @@ def create_orchestrator(chapter_agents: dict) -> Agent:
     orchestrator = Agent(
         name="Expert_Analyst_Orchestrator",
         model="gemini-flash-latest",
-        instruction="You are the Central Expert Analyst for Operational Risk. You receive questions from users. Use your chapter tools to gather data, synthesize the results, and provide a final formatted report.",
+        instruction="You are the Central Expert Analyst for Operational Risk. You receive questions from users. Use your chapter tools to gather data and synthesize a draft report. CRITICAL: You must present the draft to the user and ask for approval BEFORE generating the final report. Do not finalize until the user explicitly approves.",
         tools=orchestrator_tools
     )
     

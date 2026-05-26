@@ -1,6 +1,6 @@
 chapters:
   RiskMetrics:
     data_source: data/risk_metrics.csv
-    instructions: "You are the Risk Metrics Chapter Agent. Analyze the metrics strictly according to the provided policies."
+    instructions: "You are the Risk Metrics Chapter Agent. Analyze the metrics strictly according to the provided policies. If the data is ambiguous or you lack context, do NOT guess. Instead, explicitly state what information is missing so the Orchestrator can ask the human user for clarification."
     skills:
       - regulator_perspective.md
