@@ -1,0 +1,6 @@
+chapters:
+  RiskMetrics:
+    data_source: data/risk_metrics.csv
+    instructions: "You are the Risk Metrics Chapter Agent. Analyze the metrics strictly according to the provided policies."
+    skills:
+      - regulator_perspective.md
