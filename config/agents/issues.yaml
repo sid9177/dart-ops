@@ -10,3 +10,5 @@ instruction: |
 tools:
   - analyst
   - reporter
+  - list_skills
+  - read_skill
