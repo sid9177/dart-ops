@@ -18,9 +18,11 @@ You will migrate both your YAML configurations AND your Python agent definitions
 All custom Python tools have been consolidated into a single file to match Helix conventions.
 
 - **Tools & Registry**: [app/helix_agent/tools.py](./app/helix_agent/tools.py)
-  - *Contains the DuckDB query tool (`execute_duckdb_query`), the Skill Reader tools (`list_skills`, `read_skill`), and the `REGISTRY` map.*
+  - *Contains the DuckDB query tool (`execute_duckdb_query`), the Skill Reader tools (`list_skills`, `read_skill`), the PDF generator (`generate_pdf_report`), the PPTX generator (`generate_ppt_report`), and the `REGISTRY` map.*
 - **Database Files**: `data/*.csv`
   - *IMPORTANT: You must migrate `data/issues.csv` and `data/risk_metrics.csv` to your root directory. The DuckDB tool queries these local CSV files!*
+- **Reporting Templates**: `data/designs/`
+  - *You must migrate the `data/designs/` directory containing `template.html` and `template.pptx` for the Citi-branded reporting to work.*
 
 ## 3. Dependencies
 Our custom code introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
