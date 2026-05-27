@@ -25,7 +25,7 @@ All custom Python tools have been consolidated into a single file to match Helix
 ## 3. Dependencies
 Our custom code introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
 
-- **Dependencies**: Add `duckdb`, `pandas`, and `pyyaml` to your Helix environment.
+- **Dependencies**: Add `duckdb`, `pandas`, `pyyaml`, `xhtml2pdf`, `jinja2`, and `python-pptx` to your Helix environment.
   - *Reference: See the `dependencies` array in our local [pyproject.toml](./pyproject.toml).*
 
 ## 4. Skills (Knowledge Base)
