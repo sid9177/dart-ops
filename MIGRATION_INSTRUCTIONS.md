@@ -4,15 +4,13 @@
 
 Since we have fully refactored this staging repository to mirror your production **Helix** environment, your migration is now a simple 1:1 copy operation! You can drag and drop the `app/helix_agent/` folder and the `files/` folder directly into your workspace.
 
-## 1. Agent Logic & Factories (The Core Brains)
-You will migrate both your YAML configurations AND your Python agent definitions.
+## 1. Agent Logic (The Core Brains)
+You will migrate your Python agent definitions. We use `agents.py` rather than YAML configs and `agent_utils.py`.
 
 - **The Entry Point**: [app/helix_agent/agent.py](./app/helix_agent/agent.py)
   - *This file exports your Orchestrator as `root_agent`.*
-- **The Factory & Config Reader**: [app/helix_agent/agent_utils.py](./app/helix_agent/agent_utils.py)
-  - *This file contains the `create_all_agents` logic that instantiates the ADK `Agent()` objects, as well as the YAML parsing logic.*
-- **The Configs**: `app/helix_agent/sub_agents/*.yaml`
-  - *The YAML files that `agent_utils.py` reads to dynamically inject the `instruction`, `model`, and `description`.*
+- **The Agents**: [app/helix_agent/agents.py](./app/helix_agent/agents.py)
+  - *This file contains all your native Python `Agent` definitions.*
 
 ## 2. Tools (Capabilities)
 All custom Python tools have been consolidated into a single file to match Helix conventions.
@@ -27,7 +25,7 @@ All custom Python tools have been consolidated into a single file to match Helix
 ## 3. Dependencies
 Our custom code introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
 
-- **Dependencies**: Add `duckdb`, `pandas`, `pyyaml`, `xhtml2pdf`, `jinja2`, and `python-pptx` to your Helix environment.
+- **Dependencies**: Add `duckdb`, `pandas`, `xhtml2pdf`, `jinja2`, and `python-pptx` to your Helix environment.
   - *Reference: See the `dependencies` array in our local [pyproject.toml](./pyproject.toml).*
 
 ## 4. Skills (Knowledge Base)
@@ -43,5 +41,5 @@ You should migrate your markdown files to the skills directory.
 ## 6. Critical Edge Cases & Gotchas
 Before spinning up your Helix environment, verify the following:
 
-- **The DuckDB Working Directory Trap**: In your `issues.yaml` and `risk_metrics.yaml`, the agent is told to query `'data/issues.csv'`. If your Helix startup script (`app.sh`) executes Python from inside the `app/` folder instead of the project root, DuckDB will try to find `app/data/issues.csv` and crash. If this happens, update the YAML files to use absolute paths (e.g., `'/app/workspace/data/issues.csv'`) or relative paths (`'../data/issues.csv'`).
-- **API Keys & Quotas**: Ensure your Helix secret manager has the `GOOGLE_API_KEY` correctly configured. The YAML files hardcode the model to `gemini-2.5-flash`; ensure your environment has quota for this specific model variant to prevent 404/429 errors.
+- **The DuckDB Working Directory Trap**: In your agent definitions, the agent is told to query `'data/issues.csv'`. If your Helix startup script (`app.sh`) executes Python from inside the `app/` folder instead of the project root, DuckDB will try to find `app/data/issues.csv` and crash. If this happens, update the agent definitions to use absolute paths (e.g., `'/app/workspace/data/issues.csv'`) or relative paths (`'../data/issues.csv'`).
+- **API Keys & Quotas**: Ensure your Helix secret manager has the `GOOGLE_API_KEY` correctly configured. The agent definitions hardcode the model to `gemini-2.5-flash`; ensure your environment has quota for this specific model variant to prevent 404/429 errors.
