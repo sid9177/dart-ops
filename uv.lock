@@ -427,7 +427,6 @@ dependencies = [
     { name = "opentelemetry-instrumentation-google-genai" },
     { name = "pandas" },
     { name = "python-pptx" },
-    { name = "pyyaml" },
     { name = "reportlab" },
     { name = "xhtml2pdf" },
 ]
@@ -468,7 +467,6 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "python-pptx", specifier = ">=1.0.2" },
     { name = "python-pptx", marker = "extra == 'export'", specifier = ">=1.0.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
     { name = "reportlab", specifier = ">=4.5.1" },
     { name = "reportlab", marker = "extra == 'export'", specifier = ">=4.0" },
     { name = "ruff", marker = "extra == 'lint'", specifier = ">=0.4.6,<1.0.0" },
