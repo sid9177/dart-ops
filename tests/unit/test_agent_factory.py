@@ -13,4 +13,4 @@ def test_create_all_agents():
     assert "reporter" in REGISTRY
     
     # Check that tool descriptions use the description from yaml
-    assert "Synthesizes raw data" in REGISTRY["reporter"].description
+    assert "Generates final compliance reports" in REGISTRY["reporter"].description
