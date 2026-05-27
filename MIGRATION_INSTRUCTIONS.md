@@ -5,12 +5,12 @@
 Since we have fully refactored this staging repository to mirror your production **Helix** environment, your migration is now a simple 1:1 copy operation! You can drag and drop the `app/helix_agent/` folder and the `files/` folder directly into your workspace.
 
 ## 1. Agent Logic (The Core Brains)
-You will migrate your Python agent definitions. We use `agents.py` rather than YAML configs and `agent_utils.py`.
+You will migrate your Python agent definitions. We use a modular `agents/` directory package rather than YAML configs or a monolithic file.
 
 - **The Entry Point**: [app/helix_agent/agent.py](./app/helix_agent/agent.py)
   - *This file exports your Orchestrator as `root_agent`.*
-- **The Agents**: [app/helix_agent/agents.py](./app/helix_agent/agents.py)
-  - *This file contains all your native Python `Agent` definitions.*
+- **The Agents Package**: `app/helix_agent/agents/`
+  - *This directory contains all your native Python `Agent` definitions neatly separated into individual files (e.g., `analyst.py`, `reporter.py`).*
 
 ## 2. Tools (Capabilities)
 All custom Python tools have been consolidated into a single file to match Helix conventions.
