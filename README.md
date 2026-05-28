@@ -1,120 +1,59 @@
-# dart-ops
+# dart-ops (Staging Environment for Helix)
 
+This repository serves as a staging and development area for building Operational Risk AI Agents using the Google Agent Development Kit (ADK). The code here is designed to be highly portable so that it can be cleanly copy-pasted directly into the production **Helix** environment.
 
-Agent generated with `agents-cli` version `0.2.0`
+## Project Architecture
 
-## Project Structure
+The agent architecture is written entirely in modular Python to match the target Helix environment structure. 
 
-```
+```text
 dart-ops/
-├── config/
-│   ├── agents/                # All agent configurations (YAML)
-│   │   ├── issues.yaml
-│   │   ├── risk_metrics.yaml
-│   │   └── orchestrator.yaml
-│   └── reviewers/             # LOD reviewer configurations (YAML)
-│       └── second_lod.yaml
-├── data/                      # Data files (CSV/Excel) loaded into DuckDB
-│   ├── issues.csv
-│   └── risk_metrics.csv
-├── dart_ops/                  # Python Package
-│   ├── agent_factory.py       # Reads YAML configs and builds ADK agents
-│   ├── tool_registry.py       # Central registry for tools available to agents
-│   ├── duckdb_tool.py         # DuckDB execution tool
-│   ├── config_reader.py       # YAML parsing utility
-│   ├── fast_api_app.py        # Main entrypoint / FastAPI application
-│   └── app_utils/             # Utilities (telemetry, etc.)
-├── reports/                   # Generated PDF/PPTX reports (output)
-├── tests/                     # Unit and integration tests
-├── GEMINI.md                  # AI-assisted development guide
-└── pyproject.toml             # Project dependencies
+├── app/
+│   └── helix_agent/
+│       ├── agent.py               # Main entry point exporting the `app` and `root_agent` (Orchestrator)
+│       ├── agents/                # Individual agent definitions
+│       │   ├── orchestrator.py    # Central router
+│       │   ├── analyst.py         # Data extraction specialist
+│       │   ├── reporter.py        # Report generation specialist
+│       │   ├── issues_chapter.py  # Domain SME for Issues
+│       │   └── risk_metrics_chapter.py # Domain SME for Risk Metrics
+│       └── tools/                 # Agent capabilities
+│           ├── __init__.py        # Exports the central tool REGISTRY
+│           ├── duckdb_tool.py     # SQL execution on local CSVs
+│           └── report_tool.py     # PDF and PPTX report generation
+├── data/                          # Mock data and templates
+│   ├── issues.csv                 # Queried by DuckDB
+│   ├── risk_metrics.csv           # Queried by DuckDB
+│   └── designs/                   # HTML/PPTX templates for the reporter
+├── files/                         # Output directory for generated reports
+├── tests/                         # Unit and integration tests
+├── MIGRATION_INSTRUCTIONS.md      # Instructions for porting to Helix
+└── pyproject.toml                 # Project dependencies
 ```
 
-> 💡 **Tip:** Use [Gemini CLI](https://github.com/google-gemini/gemini-cli) for AI-assisted development - project context is pre-configured in `GEMINI.md`.
+## Core Workflows & Design Patterns
 
-## Requirements
+1. **Modular Agents**: Each agent is defined in its own file under `app/helix_agent/agents/` and exported as an `AgentTool` so it can be delegated to by other agents. The `orchestrator` acts as the central router and root agent.
+2. **Specialized Tools**: Tools are logically separated in the `app/helix_agent/tools/` package. Agents are only given the tools they strictly need to perform their jobs. We intentionally avoid giving agents dynamic file-system readers for skills; instead, any necessary instructional context should be injected at initialization.
+3. **In-Memory Data**: For development and staging, tabular data is queried directly from local CSVs in the `data/` folder using `duckdb`.
 
-Before you begin, ensure you have:
-- **uv**: Python package manager (used for all dependency management in this project) - [Install](https://docs.astral.sh/uv/getting-started/installation/) ([add packages](https://docs.astral.sh/uv/concepts/dependencies/) with `uv add <package>`)
-- **agents-cli**: Agents CLI - Install with `uv tool install google-agents-cli`
-- **Google Cloud SDK**: For GCP services - [Install](https://cloud.google.com/sdk/docs/install)
+## Development & Testing
 
-
-## Quick Start
-
-Install `agents-cli` and its skills if not already installed:
+This project uses `uv` for dependency management and `pytest` for testing.
 
 ```bash
-uvx google-agents-cli setup
+# Install dependencies
+uv sync
+
+# Run the test suite
+uv run pytest tests/unit tests/integration
+
+# Test locally using the interactive playground
+uv run agents-cli playground
 ```
 
-Install required packages:
+## Migrating to Production (Helix)
 
-```bash
-agents-cli install
-```
+Because this repository acts as a staging ground, we do not deploy infrastructure directly from here. When an agent or feature is ready, refer to the [MIGRATION_INSTRUCTIONS.md](MIGRATION_INSTRUCTIONS.md) file for the exact steps to safely migrate the code into the target Helix environment.
 
-Test the agent with a local web server:
-
-```bash
-agents-cli playground
-```
-
-You can also use features from the [ADK](https://adk.dev/) CLI with `uv run adk`.
-
-## Commands
-
-| Command              | Description                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------- |
-| `agents-cli install` | Install dependencies using uv                                                         |
-| `agents-cli playground` | Launch local development environment                                                  |
-| `agents-cli lint`    | Run code quality checks                                                               |
-| `uv run pytest tests/unit tests/integration` | Run unit and integration tests                                                        |
-
-## 🛠️ Project Management
-
-| Command | What It Does |
-|---------|--------------|
-| `agents-cli scaffold enhance` | Add CI/CD pipelines and Terraform infrastructure |
-| `agents-cli infra cicd` | One-command setup of entire CI/CD pipeline + infrastructure |
-| `agents-cli scaffold upgrade` | Auto-upgrade to latest version while preserving customizations |
-
----
-
-## Development
-
-Edit your agent logic in `agent.py` (project root) and test with `agents-cli playground` - it auto-reloads on save.
-
-## Working with Data (CSV & Excel)
-
-This project uses an in-memory database (DuckDB) to load and query data instantly. 
-
-To use your own custom data:
-1. **Place your data files**: Copy your `.csv`, `.xlsx`, or `.xls` files into the `data/` directory.
-2. **Update Agent Configurations**: Open the corresponding YAML files in `config/agents/` (e.g., `issues.yaml` or `risk_metrics.yaml`).
-3. **Point to your file**: Change the `file_path` property to point to your new file.
-   ```yaml
-   # Example for Excel
-   file_path: "data/my_custom_data.xlsx"
-   database_table: "my_table_name"
-   ```
-4. **Install Export Dependencies (optional)**: To enable Excel support and PDF/PPTX export:
-   ```bash
-   uv sync --extra export
-   ```
-   
-The `AgentRegistry` will automatically load your specified files into DuckDB when the agent starts!
-
-## Deployment
-
-```bash
-gcloud config set project <your-project-id>
-agents-cli deploy
-```
-
-To add CI/CD and Terraform, run `agents-cli scaffold enhance`.
-To set up your production infrastructure, run `agents-cli infra cicd`.
-
-## Observability
-
-Built-in telemetry exports to Cloud Trace, BigQuery, and Cloud Logging.
+> **Note for AI Assistants**: When continuing development in this repository, follow the `GEMINI.md` guidelines strictly. Prioritize making robust, portable changes to `app/helix_agent/` and ensuring `MIGRATION_INSTRUCTIONS.md` stays up to date.

@@ -1,6 +1,6 @@
-name: "dart-ops"
+name: "helix_agent"
 acli_version: "0.2.0"
-agent_directory: "dart_ops"
+agent_directory: "app/helix_agent"
 region: "us-east1"
 base_template: "local_dart-ops"
 generated_at: "2026-05-24T15:10:20.996958+00:00"

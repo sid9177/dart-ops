@@ -1,45 +1,38 @@
 # Helix Migration Instructions
 
-*Updated based on the exact `app/helix_agent/` folder structure.*
+Because your Helix environment has drifted from this staging repository, **do not perform a 1:1 copy of the files.** Instead, manually apply the following structural and logical updates to your environment to sync the new capabilities without overwriting your custom logic.
 
-Since we have fully refactored this staging repository to mirror your production **Helix** environment, your migration is now a simple 1:1 copy operation! You can drag and drop the `app/helix_agent/` folder and the `files/` folder directly into your workspace.
+## 1. Tools Architecture Refactor
+We shifted away from a monolithic `tools.py` file to a scalable `tools/` package.
 
-## 1. Agent Logic (The Core Brains)
-You will migrate your Python agent definitions. We use a modular `agents/` directory package rather than YAML configs or a monolithic file.
+**What you need to do:**
+1. Create a `tools/` directory inside your agent app folder.
+2. Split your existing tools into domain-specific files (e.g., `duckdb_tool.py` for database queries, `report_tool.py` for PPTX/PDF generation).
+3. Create a `tools/__init__.py` file to re-export your tools and maintain your `REGISTRY` map. For example:
+   ```python
+   from .duckdb_tool import execute_duckdb_query
+   from .report_tool import generate_pdf_report, generate_ppt_report
 
-- **The Entry Point**: [app/helix_agent/agent.py](./app/helix_agent/agent.py)
-  - *This file exports your Orchestrator as `root_agent`.*
-- **The Agents Package**: `app/helix_agent/agents/`
-  - *This directory contains all your native Python `Agent` definitions neatly separated into individual files (e.g., `analyst.py`, `reporter.py`).*
+   REGISTRY = {
+       "execute_duckdb_query": execute_duckdb_query,
+       "generate_pdf_report": generate_pdf_report,
+       "generate_ppt_report": generate_ppt_report,
+   }
+   ```
+4. Delete your old monolithic `tools.py` file and verify all agent imports point to the new package (e.g., `from app.helix_agent.tools import execute_duckdb_query`).
 
-## 2. Tools (Capabilities)
-All custom Python tools have been consolidated into a single file to match Helix conventions.
+## 2. Removal of Dynamic Skill Reading
+We determined that agents dynamically scanning the filesystem for their instructions (`list_skills`, `read_skill`) is an anti-pattern. Context should be injected directly into the agent's prompts.
 
-- **Tools & Registry**: [app/helix_agent/tools.py](./app/helix_agent/tools.py)
-  - *Contains the DuckDB query tool (`execute_duckdb_query`), the Skill Reader tools (`list_skills`, `read_skill`), the PDF generator (`generate_pdf_report`), the PPTX generator (`generate_ppt_report`), and the `REGISTRY` map.*
-- **Database Files**: `data/*.csv`
-  - *IMPORTANT: You must migrate `data/issues.csv` and `data/risk_metrics.csv` to your root directory. The DuckDB tool queries these local CSV files!*
-- **Reporting Templates**: `data/designs/`
-  - *You must migrate the `data/designs/` directory containing `template.html` and `template.pptx` for the Citi-branded reporting to work.*
+**What you need to do:**
+1. **Delete Tool Implementations**: Remove `list_skills`, `read_skill`, and `get_skills_dir` from your tools entirely.
+2. **Update Agent Tool Lists**: Go into your agent definitions (specifically the orchestrator and any chapter agents like `issues_chapter`) and remove the skill reading tools from their `tools=[...]` array.
+3. **Update Agent Instructions**: Edit the `instruction` or `system_prompt` for these agents. Remove any text that instructs the agent to "use list_skills to consult guidelines" or "read skills from the filesystem."
+4. **Shift to Injection**: Instead of the agent fetching skills at runtime, ensure your application logic injects the contents of those markdown guidelines directly into the agent's instruction string when initializing the agent.
 
-## 3. Dependencies
-Our custom code introduced net-new third-party dependencies that are not part of the standard ADK. You MUST migrate these into your Helix environment's `pyproject.toml` (or `requirements.txt`), and sync your environment.
+## 3. Dependency Updates
+Ensure your environment's `pyproject.toml` or `requirements.txt` matches any new dependencies required by the decoupled tools.
+- Verify `duckdb`, `pandas`, `xhtml2pdf`, `jinja2`, and `python-pptx` are installed.
 
-- **Dependencies**: Add `duckdb`, `pandas`, `xhtml2pdf`, `jinja2`, and `python-pptx` to your Helix environment.
-  - *Reference: See the `dependencies` array in our local [pyproject.toml](./pyproject.toml).*
-
-## 4. Skills (Knowledge Base)
-You should migrate your markdown files to the skills directory.
-
-- Example: [app/helix_agent/skills/regulator_perspective.md](./app/helix_agent/skills/regulator_perspective.md)
-
-## 5. Environment & Evaluation (Testing)
-- **Environment**: [files/config/.env](./files/config/.env)
-- **Evalset**: [tests/eval/evalsets/hierarchy_evalset.json](./tests/eval/evalsets/hierarchy_evalset.json)
-- **Rubrics/Metrics**: [tests/eval/eval_config.json](./tests/eval/eval_config.json)
-
-## 6. Critical Edge Cases & Gotchas
-Before spinning up your Helix environment, verify the following:
-
-- **The DuckDB Working Directory Trap**: In your agent definitions, the agent is told to query `'data/issues.csv'`. If your Helix startup script (`app.sh`) executes Python from inside the `app/` folder instead of the project root, DuckDB will try to find `app/data/issues.csv` and crash. If this happens, update the agent definitions to use absolute paths (e.g., `'/app/workspace/data/issues.csv'`) or relative paths (`'../data/issues.csv'`).
-- **API Keys & Quotas**: Ensure your Helix secret manager has the `GOOGLE_API_KEY` correctly configured. The agent definitions hardcode the model to `gemini-2.5-flash`; ensure your environment has quota for this specific model variant to prevent 404/429 errors.
+## 4. Critical Edge Cases
+- **DuckDB Pathing**: If your agents use relative paths (like `data/issues.csv`) in their instructions, ensure the DuckDB tool is aware of the exact working directory your Helix application boots from to prevent file-not-found crashes.
