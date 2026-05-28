@@ -36,3 +36,20 @@ Ensure your environment's `pyproject.toml` or `requirements.txt` matches any new
 
 ## 4. Critical Edge Cases
 - **DuckDB Pathing**: If your agents use relative paths (like `data/issues.csv`) in their instructions, ensure the DuckDB tool is aware of the exact working directory your Helix application boots from to prevent file-not-found crashes.
+
+## 5. Lightweight Observability Plugin
+We added native ADK observability to provide clean terminal output showing agent handoffs, tool usage, and LLM reasoning without massive data dumps.
+
+**What you need to do:**
+1. **Create the Plugin**: Add a `plugins.py` file to your agent directory containing a custom `LightweightObservabilityPlugin` class that inherits from `google.adk.plugins.base_plugin.BasePlugin`.
+2. **Implement Callbacks**: In your custom plugin, override `before_agent_callback`, `before_tool_callback`, and `after_model_callback` to print concise logs (e.g., `print(f"[OBSERVABILITY] Agent '{callback_context.agent_name}' taken over")`). Ensure you gracefully handle missing attributes since the context models may occasionally lack them.
+3. **Register the Plugin**: In your main application file (e.g., `agent.py`), import your new plugin and pass it to the `App` configuration:
+   ```python
+   from .plugins import LightweightObservabilityPlugin
+
+   app = App(
+       name="OpsDART",
+       root_agent=root_agent,
+       plugins=[LightweightObservabilityPlugin()]
+   )
+   ```
