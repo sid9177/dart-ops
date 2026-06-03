@@ -45,16 +45,19 @@ Now that the master layout is complete, implement the chat logic and DOM renderi
    - Write a function that reads the messages array and renders them into the Left Panel's DOM.
    - **Styling the Bubbles:** Render the messages as premium-looking chat bubbles. 
      - **User Messages:** Align right, use a distinct premium color (e.g., a solid Citigroup Blue `#002D72` background with white text), and soft shadows.
-     - **Agent Messages:** Align left, use a clean off-white or light gray background (e.g., `#f4f5f7` or white) with dark text, and soft shadows. Include an elegant transition or entrance animation if possible.
+     - **Agent Messages:** Align left, use a clean off-white or light gray background (e.g., `#f4f5f7` or white) with dark text, and soft shadows. Include a specific CSS animation (e.g. fade-in and slide-up) for new messages.
    - **Auto-Scrolling:** Ensure the chat container automatically scrolls to the bottom every time a new message is added or rendered.
+   - **Mock Agent Response:** Generate a mock agent response (e.g., using `setTimeout` or prepopulating the state array) to verify the 'Agent Messages' styling.
 
 4. **Event Handling:**
    - Add event listeners to the chat input area.
    - Ensure the user can send a message by pressing the `Enter` key.
+   - Clear the input field after the message is submitted.
 
 **Acceptance Criteria:**
 - `script.js` is created and linked in `index.html`.
 - A data structure (array) successfully stores message objects (role + content).
-- A rendering function displays these messages as visually distinct, premium chat bubbles (User vs. Agent).
+- A rendering function displays these messages as visually distinct, premium chat bubbles (User vs. Agent) with a fade-in and slide-up animation.
+- A mock agent response is generated to verify agent styling.
 - The chat container auto-scrolls to the bottom upon receiving a new message.
-- Pressing `Enter` in the input field successfully sends the message.
+- Pressing `Enter` in the input field successfully sends the message and clears the input field.
