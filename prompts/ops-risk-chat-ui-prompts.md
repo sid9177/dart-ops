@@ -71,6 +71,8 @@ We need to enhance the right panel (Artifact Viewer) to dynamically render compl
 1. **Detecting Artifacts:**
    - Update the chat message rendering logic in `script.js` to detect XML-style blocks within an agent's response, specifically `<artifact type="markdown">`, `<artifact type="mermaid">`, or `<artifact type="data-grid">`.
    - The `<artifact>` tags will wrap the content (e.g., `<artifact type="markdown"># Hello</artifact>`).
+   - The parsing logic MUST support extracting and rendering multiple artifacts per message.
+   - You MUST preserve and display any regular text surrounding the `<artifact>` tags in the chat bubble. Only the `<artifact>` blocks themselves should be converted into chips.
 
 2. **Rendering Artifact Chips in Chat:**
    - When an artifact is detected, do NOT render the raw markdown or code inside the chat bubble.
@@ -87,14 +89,19 @@ We need to enhance the right panel (Artifact Viewer) to dynamically render compl
    - **Markdown (`type="markdown"`):** Parse the text inside the artifact using `marked` and display the resulting HTML.
    - **Mermaid (`type="mermaid"`):** Render the flowchart using the `mermaid.js` library.
    - **Data Grid (`type="data-grid"`):** 
-     - The content inside the tag will be a JSON array of objects. 
+     - The content inside the tag will be a JSON array of objects (e.g., a flat array of objects like `[{"id": 1, "name": "Item A"}, {"id": 2, "name": "Item B"}]`). 
      - Parse the JSON data and build a basic HTML table dynamically.
      - Apply Citi-styled CSS to the table (e.g., alternating row colors, bold Citigroup Blue `#002D72` headers, crisp borders).
 
+5. **Mock Agent Responses:**
+   - Include mock artifacts (Markdown, Mermaid, and Data Grid) in the prepopulated chat state or initial mock responses to verify that all the renderers work correctly and that multiple artifacts in a single message render correctly alongside surrounding text.
+
 **Acceptance Criteria:**
 - CDNs for `marked.js` and `mermaid.min.js` are properly injected into `index.html`.
-- Agent chat bubbles correctly parse XML-style `<artifact>` tags and display interactive chips instead of raw artifact text.
+- Agent chat bubbles correctly parse XML-style `<artifact>` tags and display interactive chips instead of raw artifact text, while preserving surrounding regular text.
+- Parsing logic successfully extracts and renders multiple artifacts from a single message.
 - Clicking an artifact chip successfully renders the content into the Right Panel.
 - Markdown artifacts render as formatted HTML.
 - Mermaid artifacts render as SVG flowcharts.
-- Data Grid artifacts parse JSON and render as a dynamically styled HTML table with Citi-styled CSS (alternating rows, bold headers).
+- Data Grid artifacts parse JSON (from a flat array of objects) and render as a dynamically styled HTML table with Citi-styled CSS (alternating rows, bold headers).
+- Mock artifacts of all types are included in the chat state to verify the renderers.
