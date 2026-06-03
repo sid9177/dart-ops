@@ -113,8 +113,9 @@ We need to wire up a hardcoded demo sequence in `script.js` to show off the UI t
 
 **Instructions:**
 1. **Define an Input Trigger:**
-   - Update the message submission logic in `script.js` to detect a specific predefined user query, such as exact match or contains: "Show me the top risk anomalies today".
+   - Update the message submission logic in `script.js` to detect a specific predefined user query, using a case-insensitive substring match for the phrase: "Show me the top risk anomalies today".
    - If this specific trigger is typed, intercept the standard chat flow to trigger the custom demo sequence.
+   - If the user inputs something other than the trigger phrase, explicitly define fallback behavior: fall back to a generic fallback mock response (e.g., "I'm a demo agent. Please ask me to 'Show me the top risk anomalies today'.").
 
 2. **Simulate Processing Delay:**
    - Instead of replying immediately, the agent must simulate a "thinking" delay of 1.5 seconds using `setTimeout`.
@@ -129,7 +130,8 @@ We need to wire up a hardcoded demo sequence in `script.js` to show off the UI t
    - Ensure that when this message is rendered, the surrounding regular text appears normally in the chat bubble, and the artifacts are converted into clickable chips that update the Right Panel when clicked.
 
 **Acceptance Criteria:**
-- The chat engine intercepts the query "Show me the top risk anomalies today".
+- The chat engine intercepts the query "Show me the top risk anomalies today" using a case-insensitive substring match.
+- The chat engine explicitly provides a generic fallback mock response for any query that does not match the trigger phrase.
 - A typing indicator or "Processing..." status is shown for 1.5 seconds before the response.
 - The mocked agent response contains a mix of regular text, a `data-grid` artifact, more regular text, and a `mermaid` artifact.
 - When the mocked response is rendered, the regular text displays correctly in the chat bubble, and the artifacts appear as clickable chips that open in the Right Panel.
