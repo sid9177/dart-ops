@@ -28,3 +28,33 @@ This must be built using pure HTML, CSS, and Vanilla JS (NO React, NO npm, NO bu
 - The UI features a top header and a strict 35/65 flexbox split.
 - The design looks enterprise-ready, premium, and utilizes the `#002D72` color.
 - The layout fills the screen without body scrolling.
+
+## Prompt 2: The Chat Engine
+
+**Context & Goal:**
+Now that the master layout is complete, implement the chat logic and DOM rendering using Vanilla JS. The chat must look premium, handle user inputs, and auto-scroll properly.
+
+**Instructions:**
+1. **Create Base File:**
+   Create `script.js` and ensure it is linked in `index.html`. If not already present, add the necessary HTML structural tags inside the Left Panel for a messages container, an input box, and a send button.
+   
+2. **State Management:**
+   - Create a JavaScript array to hold chat messages. Each message should be an object with `role` (e.g., 'user', 'agent') and `content` (the text string).
+
+3. **Rendering the Chat:**
+   - Write a function that reads the messages array and renders them into the Left Panel's DOM.
+   - **Styling the Bubbles:** Render the messages as premium-looking chat bubbles. 
+     - **User Messages:** Align right, use a distinct premium color (e.g., a solid Citigroup Blue `#002D72` background with white text), and soft shadows.
+     - **Agent Messages:** Align left, use a clean off-white or light gray background (e.g., `#f4f5f7` or white) with dark text, and soft shadows. Include an elegant transition or entrance animation if possible.
+   - **Auto-Scrolling:** Ensure the chat container automatically scrolls to the bottom every time a new message is added or rendered.
+
+4. **Event Handling:**
+   - Add event listeners to the chat input area.
+   - Ensure the user can send a message by pressing the `Enter` key.
+
+**Acceptance Criteria:**
+- `script.js` is created and linked in `index.html`.
+- A data structure (array) successfully stores message objects (role + content).
+- A rendering function displays these messages as visually distinct, premium chat bubbles (User vs. Agent).
+- The chat container auto-scrolls to the bottom upon receiving a new message.
+- Pressing `Enter` in the input field successfully sends the message.
