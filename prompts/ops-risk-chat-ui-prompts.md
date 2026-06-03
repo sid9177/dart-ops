@@ -105,3 +105,31 @@ We need to enhance the right panel (Artifact Viewer) to dynamically render compl
 - Mermaid artifacts render as SVG flowcharts.
 - Data Grid artifacts parse JSON (from a flat array of objects) and render as a dynamically styled HTML table with Citi-styled CSS (alternating rows, bold headers).
 - Mock artifacts of all types are included in the chat state to verify the renderers.
+
+## Prompt 4: Mock Interaction Demo
+
+**Context & Goal:**
+We need to wire up a hardcoded demo sequence in `script.js` to show off the UI to executives. The system should intercept a specific user query, simulate processing time, and return a rich, multi-artifact response to demonstrate the UI's capabilities.
+
+**Instructions:**
+1. **Define an Input Trigger:**
+   - Update the message submission logic in `script.js` to detect a specific predefined user query, such as exact match or contains: "Show me the top risk anomalies today".
+   - If this specific trigger is typed, intercept the standard chat flow to trigger the custom demo sequence.
+
+2. **Simulate Processing Delay:**
+   - Instead of replying immediately, the agent must simulate a "thinking" delay of 1.5 seconds using `setTimeout`.
+   - During this delay, render a typing indicator or a "Processing..." status message in the chat to provide feedback to the user. Remove this indicator when the final response is ready.
+
+3. **Return Mixed Content Response:**
+   - After the delay, the agent should reply with a detailed response that contains mixed content. The response MUST include the following in order:
+     - Regular text summarizing the current risk landscape.
+     - An `<artifact type="data-grid">` tag containing a JSON array of 3 mocked anomalies (ensure the JSON is a flat array of objects).
+     - More regular text explaining the escalation path.
+     - An `<artifact type="mermaid">` tag containing a simple escalation flowchart.
+   - Ensure that when this message is rendered, the surrounding regular text appears normally in the chat bubble, and the artifacts are converted into clickable chips that update the Right Panel when clicked.
+
+**Acceptance Criteria:**
+- The chat engine intercepts the query "Show me the top risk anomalies today".
+- A typing indicator or "Processing..." status is shown for 1.5 seconds before the response.
+- The mocked agent response contains a mix of regular text, a `data-grid` artifact, more regular text, and a `mermaid` artifact.
+- When the mocked response is rendered, the regular text displays correctly in the chat bubble, and the artifacts appear as clickable chips that open in the Right Panel.
