@@ -28,8 +28,8 @@ def provide_suggestions(prompts: list[str]) -> str:
     return "Suggestions rendered."
 ```
 
-### Step 2: Replace `globals.css`
-Completely overwrite our frontend `globals.css` with this exact code to establish the design tokens:
+### Step 2: Merge the Design Tokens into `globals.css`
+Carefully review our existing `globals.css`. Integrate the following Citigroup CSS variables, fonts, and layout classes. Do NOT blindly overwrite the file; merge these tokens with our existing styles, ensuring the new `triple-pane-layout` and CSS variables take precedence for the main application layout:
 ```css
 @import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
 
@@ -100,8 +100,13 @@ body {
 }
 ```
 
-### Step 3: Replace `page.tsx`
-Completely overwrite our frontend `page.tsx` with this exact code to implement the Next.js `useCopilotAction` interceptors:
+### Step 3: Refactor `page.tsx` for Action-Only UI
+Carefully review our existing `page.tsx` (and any related UI components). Instead of overwriting the file, surgically integrate the `useCopilotAction` hooks to intercept the backend tools. 
+1. Ensure `TextMessage` and `MessageRole` are imported from `@copilotkit/runtime-client-gql`.
+2. Implement the `display_in_center` hook to catch text and render it in our center dashboard.
+3. Implement the `provide_suggestions` hook to render clickable buttons in the Copilot chat.
+
+Use the following prototype code as a strict reference for the logic and aesthetics you must merge into our existing application:
 ```tsx
 "use client";
 import { CopilotChat } from "@copilotkit/react-ui";
