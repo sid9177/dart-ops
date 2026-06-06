@@ -123,7 +123,7 @@ export default function OperationalRiskDashboard() {
     name: "display_in_center",
     description: "Renders analysis text in the center dashboard",
     parameters: [{ name: "analysis_text", type: "string", description: "The text to display" }],
-    handler: async () => {},
+    available: "remote",
     render: ({ args }) => {
       if (args.analysis_text) setCenterText(args.analysis_text);
       return <div className="hidden" style={{ display: 'none' }} />;
@@ -135,7 +135,7 @@ export default function OperationalRiskDashboard() {
     name: "provide_suggestions",
     description: "Renders clickable follow-up prompts in the chat",
     parameters: [{ name: "prompts", type: "string[]", description: "The follow up prompts" }],
-    handler: async () => {},
+    available: "remote",
     render: ({ args }) => {
       if (!args.prompts || args.prompts.length === 0) return <></>;
       
