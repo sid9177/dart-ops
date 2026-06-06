@@ -28,8 +28,8 @@ def provide_suggestions(prompts: list[str]) -> str:
     return "Suggestions rendered."
 ```
 
-### Step 2: Merge the Design Tokens into `globals.css`
-Carefully review our existing `globals.css`. Integrate the following Citigroup CSS variables, fonts, and layout classes. Do NOT blindly overwrite the file; merge these tokens with our existing styles, ensuring the new `triple-pane-layout` and CSS variables take precedence for the main application layout:
+### Step 2: Merge the Design Tokens into the Main Global Stylesheet
+Carefully locate our existing global CSS file (it might be named `index.css`, `App.css`, `globals.css`, or similar). Integrate the following Citigroup CSS variables, fonts, and layout classes. Do NOT blindly overwrite the file; merge these tokens with our existing styles, ensuring the new `triple-pane-layout` and CSS variables take precedence for the main application layout:
 ```css
 @import url('https://fonts.googleapis.com/css2?family=Overpass:ital,wght@0,300;0,400;0,600;0,700;1,400&display=swap');
 
@@ -100,8 +100,8 @@ body {
 }
 ```
 
-### Step 3: Refactor `page.tsx` for Action-Only UI
-Carefully review our existing `page.tsx` (and any related UI components). Instead of overwriting the file, surgically integrate the `useCopilotAction` hooks to intercept the backend tools. 
+### Step 3: Refactor the Main Copilot Dashboard Component for Action-Only UI
+Carefully locate our existing main Copilot UI component (it might be `App.tsx`, `Dashboard.tsx`, `page.tsx`, or similar). Instead of overwriting the file, surgically integrate the `useCopilotAction` hooks to intercept the backend tools. 
 1. Ensure `TextMessage` and `MessageRole` are imported from `@copilotkit/runtime-client-gql`.
 2. Implement the `display_in_center` hook to catch text and render it in our center dashboard.
 3. Implement the `provide_suggestions` hook to render clickable buttons in the Copilot chat.
