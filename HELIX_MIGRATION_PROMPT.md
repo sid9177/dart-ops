@@ -1,31 +1,45 @@
 # Helix Migration Prompt
 
-*Copy and paste the following prompt to your Helix coding agent to automatically migrate the Zero-Chat / Action-Only UI paradigm and Citigroup design system into your environment.*
+*Copy and paste the following prompt to your Helix coding agent to automatically migrate the Zero-Chat / Action-Only UI paradigm and Citigroup design system into your environment using the official CopilotKit Google ADK integration pattern.*
 
 ***
 
-We are undertaking a full UI and architectural revamp of our Copilot application. The goal is twofold: 
+We are undertaking a full UI and architectural revamp of our Copilot application using the official `@copilotkit/react-core/v2` and `ag-ui-adk` integration patterns. The goal is twofold: 
 1. Implement a modern 'Triple-Pane' UI using precise Citigroup brand colors and the 'Overpass' font. 
 2. Implement a 'Zero-Chat / Action-Only' Generative UI paradigm. The chat window must NEVER contain standard text; all text must route to the center dashboard, while the chat window is exclusively for displaying clickable follow-up buttons.
 
 Please execute the following three steps immediately to implement this:
 
-### Step 1: Update the Python ADK Backend
-Create two new tools: `display_in_center(analysis_text: str)` and `provide_suggestions(prompts: list[str])`. Then, heavily restrict the root agent's `instructions` so it NEVER outputs standard conversational text. It MUST always route its text output to `display_in_center` and route follow-up questions to `provide_suggestions`.
+### Step 1: Update the Python ADK Backend for AG-UI
+Update the backend ADK agent to support CopilotKit's `ag-ui-adk` package. 
+1. Create two new tools: `display_in_center(analysis_text: str)` and `provide_suggestions(prompts: list[str])`. 
+2. Heavily restrict the root agent's `instruction` so it NEVER outputs standard conversational text. It MUST always route its text output to `display_in_center` and route follow-up questions to `provide_suggestions`.
+3. Add `AGUIToolset()` to the agent's `tools=[]` list alongside the custom tools.
+4. Add `after_model_callback=stop_on_terminal_text` to the agent initialization to prevent infinite LLM loops.
 
 **Reference Code:**
 ```python
 from google.adk.tools import tool
+from google.adk.agents import LlmAgent
+from ag_ui_adk import AGUIToolset
+from agents.shared_chat import stop_on_terminal_text
 
 @tool
-def display_in_center(analysis_text: str) -> str:
+def display_in_center(tool_context, analysis_text: str) -> dict:
     """Displays analysis text in the center dashboard. Use for all conversational text."""
-    return "Displayed."
+    return {"status": "Displayed"}
 
 @tool
-def provide_suggestions(prompts: list[str]) -> str:
+def provide_suggestions(tool_context, prompts: list[str]) -> dict:
     """Displays clickable follow-up prompts in the chat sidebar. Provide 2-3 suggestions."""
-    return "Suggestions rendered."
+    return {"status": "Suggestions rendered"}
+
+# Inside your agent definition:
+my_agent = LlmAgent(
+    # ... your existing config ...
+    tools=[AGUIToolset(), display_in_center, provide_suggestions, ...],
+    after_model_callback=stop_on_terminal_text
+)
 ```
 
 ### Step 2: Merge the Design Tokens into the Main Global Stylesheet
@@ -98,20 +112,28 @@ body {
   color: white !important;
   border-radius: 4px !important;
 }
+
+/* Hide standard assistant text bubbles to maintain Zero-Chat aesthetic */
+.copilotKitMessage[data-role="assistant"] .copilotKitMessageContent {
+  display: none !important;
+}
 ```
 
 ### Step 3: Refactor the Main Copilot Dashboard Component for Action-Only UI
-Carefully locate our existing main Copilot UI component (it might be `App.tsx`, `Dashboard.tsx`, `page.tsx`, or similar). Instead of overwriting the file, surgically integrate the `useCopilotAction` hooks to intercept the backend tools. 
+Carefully locate our existing main Copilot UI component (it might be `App.tsx`, `Dashboard.tsx`, `page.tsx`, or similar). Instead of overwriting the file, surgically integrate the new `useRenderTool` hooks to intercept the backend tools. 
 1. Ensure `TextMessage` and `MessageRole` are imported from `@copilotkit/runtime-client-gql`.
-2. Implement the `display_in_center` hook to catch text and render it in our center dashboard.
-3. Implement the `provide_suggestions` hook to render clickable buttons in the Copilot chat.
+2. Ensure `useRenderTool` and `useCopilotChat` are imported from `@copilotkit/react-core/v2`.
+3. Ensure `z` is imported from `zod`.
+4. Implement the `display_in_center` hook to catch text and render it in our center dashboard.
+5. Implement the `provide_suggestions` hook to render clickable buttons in the Copilot chat.
 
 Use the following prototype code as a strict reference for the logic and aesthetics you must merge into our existing application:
 ```tsx
 "use client";
 import { CopilotChat } from "@copilotkit/react-ui";
-import { useCopilotAction, useCopilotChat } from "@copilotkit/react-core";
+import { useRenderTool, useCopilotChat } from "@copilotkit/react-core/v2";
 import { TextMessage, MessageRole } from "@copilotkit/runtime-client-gql";
+import { z } from "zod";
 import { useState } from "react";
 
 export default function OperationalRiskDashboard() {
@@ -119,32 +141,36 @@ export default function OperationalRiskDashboard() {
   const [centerText, setCenterText] = useState("Awaiting agent analysis...");
 
   // 1. Intercept the display_in_center tool to update the dashboard
-  useCopilotAction({
+  useRenderTool({
     name: "display_in_center",
-    description: "Renders analysis text in the center dashboard",
-    parameters: [{ name: "analysis_text", type: "string", description: "The text to display" }],
-    available: "remote",
-    render: ({ args }) => {
-      if (args.analysis_text) setCenterText(args.analysis_text);
+    parameters: z.object({
+      analysis_text: z.string(),
+    }),
+    render: ({ parameters, status }) => {
+      // Safely check if parameters exist as they stream in
+      if (parameters?.analysis_text) {
+        setCenterText(parameters.analysis_text);
+      }
       return <div className="hidden" style={{ display: 'none' }} />;
     }
-  });
+  }, []);
 
   // 2. Intercept provide_suggestions tool to render clickable buttons in chat
-  useCopilotAction({
+  useRenderTool({
     name: "provide_suggestions",
-    description: "Renders clickable follow-up prompts in the chat",
-    parameters: [{ name: "prompts", type: "string[]", description: "The follow up prompts" }],
-    available: "remote",
-    render: ({ args }) => {
-      if (!args.prompts || args.prompts.length === 0) return <></>;
+    parameters: z.object({
+      prompts: z.array(z.string()),
+    }),
+    render: ({ parameters, status }) => {
+      // Don't render until we have the prompts array
+      if (!parameters?.prompts || parameters.prompts.length === 0) return <></>;
       
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px 0' }}>
           <strong style={{ fontSize: '13px', color: 'var(--citi-dark-navy)', marginBottom: '4px' }}>
             Recommended Actions:
           </strong>
-          {args.prompts.map((prompt, i) => (
+          {parameters.prompts.map((prompt, i) => (
             <button 
               key={i}
               onClick={() => appendMessage(new TextMessage({ content: prompt, role: MessageRole.User }))}
@@ -168,7 +194,7 @@ export default function OperationalRiskDashboard() {
         </div>
       );
     }
-  });
+  }, []);
 
   return (
     <div className="triple-pane-layout">
@@ -176,7 +202,7 @@ export default function OperationalRiskDashboard() {
         <div className="citi-header">Agent Workflow Trace</div>
         <div style={{ padding: '24px', fontSize: '15px', color: 'var(--text-secondary)' }}>
           <div style={{ paddingBottom: '16px', borderBottom: '1px solid var(--border-color)', marginBottom: '16px' }}>
-            <strong>[System]</strong> Backend ready for Action-Only paradigm.
+            <strong>[System]</strong> AG-UI Integration active.
           </div>
         </div>
       </div>
@@ -230,6 +256,4 @@ export default function OperationalRiskDashboard() {
   );
 }
 ```
-
-Please overwrite these files immediately, ensure there are no TypeScript errors, and verify that our `app/layout.tsx` is properly wrapping `{children}` inside the `<CopilotKit>` component with the correct `runtimeUrl` for our ADK backend.
 ***
