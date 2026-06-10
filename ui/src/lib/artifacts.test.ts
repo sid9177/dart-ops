@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyArtifactEvent,
   applyStatusEvent,
+  type ArtifactState,
   createInitialArtifactState,
   selectPrimaryTab,
 } from "./artifacts";
@@ -11,9 +12,12 @@ describe("artifact state helpers", () => {
     const state = createInitialArtifactState();
 
     expect(state.activeTab).toBe("summary");
+    expect(state.summaryTitle).toBe("Reporting Workspace");
     expect(state.summary).toBe("");
     expect(state.rows).toEqual([]);
     expect(state.chartSeries).toEqual([]);
+    expect(state.reportTitle).toBe("");
+    expect(state.reportSections).toEqual([]);
     expect(state.files).toEqual([]);
     expect(state.statusItems).toEqual([]);
   });
@@ -76,6 +80,38 @@ describe("artifact state helpers", () => {
     expect(state.activeTab).toBe("report");
   });
 
+  it("preserves existing file links when report artifacts omit files", () => {
+    const withFiles = applyArtifactEvent(createInitialArtifactState(), {
+      type: "file-link",
+      files: [{ label: "Prior CSV", href: "/files/prior.csv" }],
+    });
+
+    const state = applyArtifactEvent(withFiles, {
+      type: "report",
+      reportTitle: "Operational Risk Brief",
+      sections: [
+        { heading: "Top Findings", body: "Payment operations need review." },
+      ],
+    });
+
+    expect(state.files).toEqual([
+      { label: "Prior CSV", href: "/files/prior.csv" },
+    ]);
+    expect(state.activeTab).toBe("report");
+  });
+
+  it("stores file-link artifacts and selects the files tab", () => {
+    const state = applyArtifactEvent(createInitialArtifactState(), {
+      type: "file-link",
+      files: [{ label: "Export CSV", href: "/files/export.csv" }],
+    });
+
+    expect(state.files).toEqual([
+      { label: "Export CSV", href: "/files/export.csv" },
+    ]);
+    expect(state.activeTab).toBe("files");
+  });
+
   it("records status events without changing the selected artifact tab", () => {
     const initial = applyArtifactEvent(createInitialArtifactState(), {
       type: "data-table",
@@ -97,15 +133,51 @@ describe("artifact state helpers", () => {
     ]);
   });
 
-  it("selects the best available tab for an artifact state", () => {
+  it("uses deterministic incrementing status ids", () => {
+    const first = applyStatusEvent(createInitialArtifactState(), {
+      label: "Querying sample risk data",
+      state: "running",
+    });
+
+    const second = applyStatusEvent(first, {
+      label: "Rendering report",
+      state: "complete",
+    });
+
+    expect(second.statusItems.map((item) => item.id)).toEqual([
+      "status-1",
+      "status-2",
+    ]);
+  });
+
+  it("selects the best available tab for an artifact state by priority", () => {
     expect(selectPrimaryTab(createInitialArtifactState())).toBe("summary");
-    expect(
-      selectPrimaryTab(
-        applyArtifactEvent(createInitialArtifactState(), {
-          type: "data-table",
-          rows: [{ riskId: "RSK-001" }],
-        }),
-      ),
-    ).toBe("data");
+
+    const withFiles: ArtifactState = {
+      ...createInitialArtifactState(),
+      files: [{ label: "Export CSV", href: "/files/export.csv" }],
+    };
+
+    const withCharts: ArtifactState = {
+      ...withFiles,
+      chartSeries: [{ label: "Payments", value: 18 }],
+    };
+
+    const withData: ArtifactState = {
+      ...withCharts,
+      rows: [{ riskId: "RSK-001" }],
+    };
+
+    const withReport: ArtifactState = {
+      ...withData,
+      reportSections: [
+        { heading: "Top Findings", body: "Payment operations need review." },
+      ],
+    };
+
+    expect(selectPrimaryTab(withFiles)).toBe("files");
+    expect(selectPrimaryTab(withCharts)).toBe("charts");
+    expect(selectPrimaryTab(withData)).toBe("data");
+    expect(selectPrimaryTab(withReport)).toBe("report");
   });
 });
