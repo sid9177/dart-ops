@@ -1,0 +1,4 @@
+name: ops_risk_reporting_sample
+model: gemini-2.5-flash
+app_name: ops_risk_reporting_sample
+user_id: local_demo_user
