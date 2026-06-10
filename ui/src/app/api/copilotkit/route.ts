@@ -1,13 +1,13 @@
 import {
   CopilotRuntime,
-  ExperimentalEmptyAdapter,
+  EmptyAdapter,
   copilotRuntimeNextJSAppRouterEndpoint,
 } from "@copilotkit/runtime";
 import { HttpAgent } from "@ag-ui/client";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { DEFAULT_AGENT_ID, resolveAgentUrl } from "@/lib/runtime-config";
 
-const serviceAdapter = new ExperimentalEmptyAdapter();
+const serviceAdapter = new EmptyAdapter();
 
 const runtime = new CopilotRuntime({
   agents: {
