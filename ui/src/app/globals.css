@@ -364,6 +364,53 @@ tbody tr:nth-child(even) {
   text-transform: uppercase;
 }
 
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.chat-header {
+  padding: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.chat-header h2 {
+  margin: 0;
+  color: var(--citi-navy);
+  font-size: 18px;
+}
+
+.starter-prompts {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.starter-prompts button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--citi-action);
+  cursor: pointer;
+  font-weight: 700;
+  text-align: left;
+}
+
+.chat-frame {
+  flex: 1;
+  min-height: 0;
+}
+
+.chat-frame > * {
+  height: 100%;
+}
+
 @media (max-width: 1120px) {
   .app-shell {
     min-height: 100vh;
