@@ -21,11 +21,14 @@ export function ChartDonut({ props }: RendererProps<ChartDonutProps>) {
   const cy = 80;
   const strokeWidth = 20;
 
-  let cumulative = 0;
-  const arcs = props.segments.map((segment, i) => {
-    const startAngle = (cumulative / total) * 2 * Math.PI;
-    cumulative += segment.value;
-    const endAngle = (cumulative / total) * 2 * Math.PI;
+  const arcs = props.segments.reduce<
+    { path: string; color: string; label: string; value: number }[]
+  >((acc, segment, i) => {
+    const prevEnd = acc.length > 0
+      ? props.segments.slice(0, i).reduce((sum, s) => sum + s.value, 0)
+      : 0;
+    const startAngle = (prevEnd / total) * 2 * Math.PI;
+    const endAngle = ((prevEnd + segment.value) / total) * 2 * Math.PI;
 
     const x1 = cx + radius * Math.sin(startAngle);
     const y1 = cy - radius * Math.cos(startAngle);
@@ -35,8 +38,8 @@ export function ChartDonut({ props }: RendererProps<ChartDonutProps>) {
 
     const path = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2}`;
     const color = DONUT_COLORS[i % DONUT_COLORS.length];
-    return { path, color, label: segment.label, value: segment.value };
-  });
+    return [...acc, { path, color, label: segment.label, value: segment.value }];
+  }, []);
 
   return (
     <div className="chart-card">

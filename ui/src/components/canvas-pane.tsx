@@ -12,32 +12,25 @@ import { HeatMap } from "@/components/catalog/heat-map";
 import { ReportSection } from "@/components/catalog/report-section";
 import { FileLink } from "@/components/catalog/file-link";
 
+type AnyComponent = React.FC<{ props: Record<string, unknown> }>;
+
+const componentMap = {
+  MarkdownSummary,
+  DataTable,
+  ChartBar,
+  ChartColumn,
+  ChartLine,
+  ChartDonut,
+  KpiCard,
+  HeatMap,
+  ReportSection,
+  FileLink,
+} as unknown as Record<string, AnyComponent>;
+
 function renderSurface(surface: SurfaceSpec) {
-  const props = { props: surface.props } as any;
-  switch (surface.component) {
-    case "MarkdownSummary":
-      return <MarkdownSummary {...props} />;
-    case "DataTable":
-      return <DataTable {...props} />;
-    case "ChartBar":
-      return <ChartBar {...props} />;
-    case "ChartColumn":
-      return <ChartColumn {...props} />;
-    case "ChartLine":
-      return <ChartLine {...props} />;
-    case "ChartDonut":
-      return <ChartDonut {...props} />;
-    case "KpiCard":
-      return <KpiCard {...props} />;
-    case "HeatMap":
-      return <HeatMap {...props} />;
-    case "ReportSection":
-      return <ReportSection {...props} />;
-    case "FileLink":
-      return <FileLink {...props} />;
-    default:
-      return null;
-  }
+  const Component = componentMap[surface.component];
+  if (!Component) return null;
+  return <Component props={surface.props} />;
 }
 
 interface CanvasPaneProps {
