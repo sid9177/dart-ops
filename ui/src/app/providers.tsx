@@ -3,6 +3,8 @@
 import { CopilotKit } from "@copilotkit/react-core/v2";
 import "@copilotkit/react-core/v2/styles.css";
 import "@copilotkit/react-ui/styles.css";
+import { catalog } from "@/components/catalog";
+import { citiTheme } from "@/lib/catalog-definitions";
 import { DEFAULT_AGENT_ID, resolveRuntimeUrl } from "@/lib/runtime-config";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -11,7 +13,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <CopilotKit runtimeUrl={runtimeUrl} agent={DEFAULT_AGENT_ID}>
+    <CopilotKit
+      runtimeUrl={runtimeUrl}
+      agent={DEFAULT_AGENT_ID}
+      a2ui={{ theme: citiTheme, catalog }}
+    >
       {children}
     </CopilotKit>
   );

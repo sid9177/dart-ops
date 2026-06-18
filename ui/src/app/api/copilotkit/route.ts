@@ -1,13 +1,11 @@
 import {
   CopilotRuntime,
-  EmptyAdapter,
-  copilotRuntimeNextJSAppRouterEndpoint,
-} from "@copilotkit/runtime";
+  createCopilotHonoHandler,
+  InMemoryAgentRunner,
+} from "@copilotkit/runtime/v2";
 import { HttpAgent } from "@ag-ui/client";
-import type { NextRequest } from "next/server";
+import { handle } from "hono/vercel";
 import { DEFAULT_AGENT_ID, resolveAgentUrl } from "@/lib/runtime-config";
-
-const serviceAdapter = new EmptyAdapter();
 
 const runtime = new CopilotRuntime({
   agents: {
@@ -15,14 +13,16 @@ const runtime = new CopilotRuntime({
       url: resolveAgentUrl(process.env.COPILOTKIT_AGENT_URL),
     }),
   },
+  runner: new InMemoryAgentRunner(),
+  a2ui: {},
 });
 
-export const POST = async (req: NextRequest) => {
-  const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
-    runtime,
-    serviceAdapter,
-    endpoint: "/api/copilotkit",
-  });
+const app = createCopilotHonoHandler({
+  runtime,
+  basePath: "/api/copilotkit",
+});
 
-  return handleRequest(req);
-};
+export const GET = handle(app);
+export const POST = handle(app);
+export const PATCH = handle(app);
+export const DELETE = handle(app);
