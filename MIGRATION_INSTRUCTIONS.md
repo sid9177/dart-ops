@@ -106,24 +106,25 @@ workspace** that replaces the previous triple-pane shell. Key changes:
    The URL **MUST end with a trailing slash** because `ag-ui-adk` mounts
    the AG-UI SSE endpoint at `path="/"`.
 
-   **Your Helix backend reads `APP_PORT` from its own environment** to
-   decide which port to listen on. Set `COPILOTKIT_AGENT_URL` to match
-   that port. For example, if `APP_PORT=8080`:
-   ```
-   COPILOTKIT_AGENT_URL=http://127.0.0.1:8080/
-   ```
+   **Your Helix backend uses two environment variables:**
+   - `APP_PORT` — the port number the FastAPI server listens on
+   - `RUN_MODE` — controls the host:
+     - `RUN_MODE=cluster` → backend binds to `0.0.0.0` (all interfaces)
+     - `RUN_MODE=<other>` → backend binds to `127.0.0.1` (localhost only)
 
-   **How to find your work laptop's APP_PORT:**
-   - Check your Helix environment variables: `echo $APP_PORT` (Linux/Mac)
-     or `echo %APP_PORT%` (Windows)
-   - Check the Helix FastAPI startup code for
-     `uvicorn.run(..., port=APP_PORT)` or `port=int(os.environ["APP_PORT"])`
+   When both UI and backend run on the same machine, use
+   `http://127.0.0.1:${APP_PORT}/` regardless of `RUN_MODE`. When the UI
+   runs on a different machine and `RUN_MODE=cluster`, use the backend
+   machine's hostname: `http://your-helix-host:${APP_PORT}/`.
+
+   **How to find your work laptop's APP_PORT and RUN_MODE:**
+   - Check your Helix environment variables:
+     `echo %APP_PORT%` and `echo %RUN_MODE%` (Windows)
+     or `echo $APP_PORT` and `echo $RUN_MODE` (Linux/Mac)
    - Run `netstat -ano | findstr LISTENING` on the work laptop to see
      which ports have servers
    - Test: `curl http://127.0.0.1:${APP_PORT}/` — if you get a response
      (not "connection refused"), that's the right URL
-   - If the UI and backend are on separate machines, use the backend
-     machine's hostname: `http://your-helix-host:${APP_PORT}/`
 
 4. **Runtime Route**: The Next.js API route at
    `src/app/api/copilotkit/route.ts` (and the catch-all at
