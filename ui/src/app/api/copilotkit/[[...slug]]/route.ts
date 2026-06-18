@@ -32,7 +32,7 @@ const runtimeInfoBody = JSON.stringify({
   openGenerativeUIEnabled: false,
 });
 
-export const GET = async (req: NextRequest) => {
+export const GET = async () => {
   return new Response(runtimeInfoBody, {
     headers: { "Content-Type": "application/json" },
   });
